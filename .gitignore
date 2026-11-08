@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+
+# Backend data (large files, personal face images)
+backend/data/reference_faces/
+backend/data/models/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# macOS
+.DS_Store
+
+# Jupyter
+.ipynb_checkpoints/
+IMPLEMENTATION_PLAN.md
+/FaceRecognition/
+backend/data/models/siamesemodelv2.h5
+backend/.venv
+backend/data/reference_faces/
