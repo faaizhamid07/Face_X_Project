@@ -7,6 +7,7 @@ so the app works immediately without training.
 """
 
 import os
+import tempfile
 import logging
 import numpy as np
 from app.config import MODEL_PATH, REFERENCE_DIR, DETECTION_THRESHOLD, VERIFICATION_THRESHOLD
@@ -19,8 +20,9 @@ _use_fallback = False   # True when falling back to face_recognition
 
 
 # ── Custom layer needed to load the .h5 ──────────────────────────────────────
-os.environ.setdefault("KERAS_HOME", "/tmp/.keras")
-os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib")
+_cache_root = os.path.join(tempfile.gettempdir(), "face-x")
+os.environ.setdefault("KERAS_HOME", os.path.join(_cache_root, "keras"))
+os.environ.setdefault("MPLCONFIGDIR", os.path.join(_cache_root, "matplotlib"))
 
 
 def _make_l1_dist_layer():
@@ -183,6 +185,16 @@ def verify(input_bytes: bytes, input_arr: np.ndarray) -> dict:
     Dispatches to Siamese model or fallback depending on what's available.
     """
     # Load all reference images
+    if not os.path.isdir(REFERENCE_DIR):
+        return {
+            "verified": False,
+            "score": 0.0,
+            "match_count": 0,
+            "total": 0,
+            "message": "No reference images found. Please register your face first.",
+            "engine": "none",
+        }
+
     ref_files = [
         f for f in os.listdir(REFERENCE_DIR)
         if f.lower().endswith((".jpg", ".jpeg", ".png"))
