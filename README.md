@@ -4,7 +4,7 @@ Real-time facial verification with a Siamese Neural Network (FastAPI + React).
 
 The app supports two verification modes:
 1. Siamese mode when a trained model exists at `backend/data/models/siamesemodelv2.h5`
-2. Fallback mode using `face_recognition` when no trained model exists
+2. Optional fallback mode using `face_recognition` when no trained model exists (install separately; see below)
 
 ## What Is Ignored by Git
 
@@ -26,29 +26,46 @@ git commit -m "Stop tracking local data and model artifacts"
 
 ## Prerequisites
 
-1. macOS (project currently configured with `tensorflow-macos` in backend requirements)
-2. Python 3.11 recommended
+1. Windows 10/11, macOS, or Linux (64-bit)
+2. Python 3.11 (64-bit) recommended
 3. Node.js 18+ and npm
 
 Check versions:
 
 ```bash
-python3 --version
+python --version
 node --version
 npm --version
 ```
 
+On macOS or Linux you may use `python3` instead of `python`. TensorFlow on native Windows uses CPU with the versions pinned by this project; native Windows GPU support for current TensorFlow is not provided. For GPU training on Windows consider WSL2. On Apple Silicon, `tensorflow-metal` is optional and not installed by default.
+
 ## 1) Clone and Install
 
-### Backend
+### Backend (Windows PowerShell)
+
+From the repository root:
+
+```powershell
+cd backend
+py -3.11 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
+Using the virtual environment's Python directly avoids PowerShell execution-policy issues. To activate it instead, run `.\.venv\Scripts\Activate.ps1` if your execution policy permits it.
+
+### Backend (macOS / Linux)
 
 ```bash
 cd backend
 python3.11 -m venv .venv
 source .venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
+
+On Apple Silicon, you can optionally install `tensorflow-metal` separately if supported by your installed TensorFlow version. This application currently disables GPU devices for training and inference, so installing the plugin alone does not enable acceleration.
 
 ### Frontend
 
@@ -88,10 +105,18 @@ Why this matters: backend config resolves dataset path from `backend/app/config.
 
 ## 3) Run the Backend API
 
-From `backend/` with virtual environment activated:
+From `backend/`, run:
+
+**Windows PowerShell:**
+
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000
+```
+
+**macOS / Linux (activated virtual environment):**
 
 ```bash
-uvicorn app.main:app --reload --port 8000
+python -m uvicorn app.main:app --reload --port 8000
 ```
 
 Health check:
@@ -185,6 +210,10 @@ Response includes:
 7. `GET /api/train/stream` (SSE)
 8. `POST /api/verify`
 
+## Optional fallback verification
+
+The `face_recognition` package is **not** part of the default requirements. Without a trained Siamese model, verification will report that the fallback dependency is missing. If you want fallback verification before training, install `face_recognition` separately. It depends on `dlib`, which can require a C++ build toolchain and CMake on Windows; installation is not guaranteed. Alternatively, use the built-in training flow and LFW dataset to create the Siamese model.
+
 ## Common Issues
 
 1. `LFW dataset not found`
@@ -192,10 +221,19 @@ Fix the dataset path to match:
 `FaceRecognition/archive/lfw-deepfunneled/lfw-deepfunneled/`
 
 2. Model not found warning
-Normal before first training. Verification falls back to `face_recognition`.
+Normal before first training. Verification can fall back to `face_recognition` only if you install that optional library. Otherwise, register images and train the Siamese model first.
 
 3. CORS or frontend cannot reach backend
 Ensure backend is running on port `8000` and frontend on `5173`.
+
+4. Windows: `py -3.11` is not recognized
+Install 64-bit Python 3.11 and enable the Python launcher, or replace `py -3.11` with the path to your Python 3.11 executable.
+
+5. TensorFlow installation fails
+Use Python 3.11 64-bit. On Windows, install the Microsoft Visual C++ Redistributable if TensorFlow reports missing runtime DLLs. For Windows GPU acceleration use WSL2 rather than native Windows.
+
+6. Browser camera unavailable
+Allow webcam access in the browser. Use `localhost` for development (or HTTPS for remote deployment).
 
 ## Project Notes
 
