@@ -9,9 +9,11 @@ GET  /api/train/status  Current training state + progress snapshot
 """
 
 import os
-# Ensure writable cache paths to avoid sandbox/permission errors
-os.environ.setdefault("KERAS_HOME", "/tmp/.keras")
-os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib")
+import tempfile
+# Portable writable cache directories (Windows, macOS, Linux).
+_cache_root = os.path.join(tempfile.gettempdir(), "face-x")
+os.environ.setdefault("KERAS_HOME", os.path.join(_cache_root, "keras"))
+os.environ.setdefault("MPLCONFIGDIR", os.path.join(_cache_root, "matplotlib"))
 
 import asyncio
 import json
@@ -340,7 +342,7 @@ def _run_training(epochs: int = 15, batch_size: int = 16) -> None:
         except ImportError as exc:
             raise RuntimeError(
                 "TensorFlow is not installed in the Python environment. "
-                "Install tensorflow-macos or tensorflow to enable training."
+                "Install the dependencies in backend/requirements.txt to enable training."
             ) from exc
 
         _push({"type": "log", "message": f"TensorFlow {tf.__version__} initialized."})
