@@ -4,14 +4,11 @@ import {
   ShieldAlert, 
   ScanFace, 
   Activity, 
-  Sparkles, 
   RotateCw, 
   AlertTriangle, 
   Clock, 
-  Layers,
   CheckCircle2,
-  XCircle,
-  Cpu
+  XCircle
 } from 'lucide-react'
 import WebcamCapture from '../components/WebcamCapture.jsx'
 import ResultCard from '../components/ResultCard.jsx'
@@ -76,22 +73,22 @@ export default function Verify() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 text-xs font-mono text-cyan-400 glass-pill px-3 py-1 rounded-full mb-2">
-            <ScanFace className="w-3.5 h-3.5" /> LIVE NEURAL INFERENCE
+          <div className="inline-flex items-center gap-2 text-xs font-mono text-slate-300 glass-pill px-3 py-1 rounded-full mb-2">
+            <ScanFace className="w-3.5 h-3.5 text-blue-400" /> LIVE NEURAL INFERENCE
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight [text-wrap:balance]">
             Biometric Authentication
           </h1>
-          <p className="text-sm text-slate-300 mt-1">
+          <p className="text-sm text-slate-300 mt-1 [text-wrap:pretty]">
             Align your face in the optical frame for instantaneous Siamese L1 distance matching.
           </p>
         </div>
 
         {/* Live mode indicator */}
         <div className="glass-panel px-4 py-2.5 rounded-2xl flex items-center gap-3 self-start border border-white/10">
-          <div className={`w-2.5 h-2.5 rounded-full ${autoVerify ? 'bg-cyan-400 shadow-[0_0_8px_#22d3ee] animate-ping' : 'bg-emerald-400 shadow-[0_0_8px_#34d399]'}`} />
+          <div className={`w-2.5 h-2.5 rounded-full ${autoVerify ? 'bg-blue-400 animate-pulse' : 'bg-emerald-400'}`} />
           <div className="text-xs">
-            <span className="text-slate-400 block font-mono uppercase text-[10px]">Sensor Engine</span>
+            <span className="text-slate-400 block font-mono uppercase">Sensor Engine</span>
             <span className="font-semibold text-white">{autoVerify ? 'Continuous Polling' : 'On-Demand Auth'}</span>
           </div>
         </div>
@@ -99,7 +96,7 @@ export default function Verify() {
 
       {/* Warnings & Alerts */}
       {regStatus && !regStatus.ready && (
-        <div className="px-5 py-3.5 rounded-2xl bg-amber-950/30 border border-amber-500/30 text-amber-200 text-xs font-medium flex items-center gap-3 backdrop-blur-xl">
+        <div className="px-5 py-3.5 rounded-2xl bg-amber-950/30 border border-amber-500/30 text-amber-200 text-xs font-medium flex items-center gap-3">
           <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
           <span>
             Only {regStatus.registered} profile frame(s) detected in the local vault. For high-fidelity verification, please{' '}
@@ -111,7 +108,7 @@ export default function Verify() {
       )}
 
       {error && (
-        <div className="px-5 py-3.5 rounded-2xl bg-rose-950/40 border border-rose-500/40 text-rose-200 text-xs font-medium flex items-center gap-3 backdrop-blur-xl">
+        <div className="px-5 py-3.5 rounded-2xl bg-rose-950/40 border border-rose-500/40 text-rose-200 text-xs font-medium flex items-center gap-3">
           <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
           <span>Authentication Error: {error}</span>
         </div>
@@ -131,16 +128,16 @@ export default function Verify() {
           <button
             onClick={runVerify}
             disabled={loading || autoVerify}
-            className="w-full max-w-[420px] py-3.5 px-6 rounded-2xl font-bold text-sm text-white bg-gradient-to-r from-cyan-500 via-sky-600 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed shadow-glow-cyan transition-all duration-300 hover:scale-[1.01] active:scale-[0.98] flex items-center justify-center gap-2.5"
+            className="w-full max-w-[420px] py-3.5 px-6 rounded-2xl font-semibold text-sm text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed shadow-md transition-all active:scale-[0.99] flex items-center justify-center gap-2.5"
           >
             {loading ? (
               <>
-                <RotateCw className="w-4 h-4 text-cyan-200 animate-spin" />
+                <RotateCw className="w-4 h-4 text-white animate-spin" />
                 <span>Evaluating Siamese Distances…</span>
               </>
             ) : (
               <>
-                <ShieldCheck className="w-4 h-4 text-cyan-200" />
+                <ShieldCheck className="w-4 h-4 text-white" />
                 <span>Verify Identity Now</span>
               </>
             )}
@@ -149,25 +146,25 @@ export default function Verify() {
           {/* Continuous Auth Switch */}
           <div 
             onClick={() => setAutoVerify(v => !v)}
-            className="w-full max-w-[420px] flex items-center justify-between p-3.5 rounded-2xl glass-panel border border-white/10 cursor-pointer select-none hover:border-cyan-500/30 transition-colors"
+            className="w-full max-w-[420px] flex items-center justify-between p-3.5 rounded-2xl glass-panel border border-white/10 cursor-pointer select-none hover:border-slate-600 transition-colors"
           >
             <div className="flex items-center gap-2.5 text-xs">
-              <Activity className="w-4 h-4 text-cyan-400" />
+              <Activity className="w-4 h-4 text-blue-400" />
               <div>
                 <span className="font-semibold text-white block">Continuous Surveillance Mode</span>
-                <span className="text-[11px] text-slate-400">Trigger neural inference every 2.5s</span>
+                <span className="text-xs text-slate-400">Trigger neural inference every 2.5s</span>
               </div>
             </div>
 
             <div
-              className={`relative w-11 h-6 rounded-full transition-colors duration-300 p-0.5 border ${
+              className={`relative w-11 h-6 rounded-full transition-colors duration-200 p-0.5 border ${
                 autoVerify 
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 border-cyan-400/50' 
+                  ? 'bg-blue-600 border-blue-500' 
                   : 'bg-slate-800 border-white/10'
               }`}
             >
               <div
-                className={`w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ${
+                className={`w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-200 ${
                   autoVerify ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />
@@ -181,26 +178,26 @@ export default function Verify() {
           {result ? (
             <ResultCard result={result} onReset={() => { setResult(null); setError(null) }} />
           ) : (
-            <div className="rounded-3xl glass-panel p-8 border border-white/10 flex flex-col items-center justify-center text-center min-h-[220px]">
-              <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-300 mb-3 shadow-glow-cyan">
-                <ScanFace className="w-6 h-6" />
+            <div className="rounded-3xl glass-panel p-8 border border-white/10 flex items-start gap-4 min-h-[160px] shadow-elevation-md">
+              <ScanFace className="w-8 h-8 text-blue-400 shrink-0 mt-0.5" />
+              <div>
+                <h2 className="text-base font-bold text-white [text-wrap:balance]">Biometric Sensor Standby</h2>
+                <p className="text-xs text-slate-400 max-w-sm mt-1 [text-wrap:pretty]">
+                  Point your face towards the optical sensor and press "Verify Identity Now" to calculate real-time embedding distances.
+                </p>
               </div>
-              <h3 className="text-base font-bold text-white">Biometric Sensor Standby</h3>
-              <p className="text-xs text-slate-400 max-w-sm mt-1">
-                Point your face towards the optical sensor and press "Verify Identity Now" to calculate real-time embedding distances.
-              </p>
             </div>
           )}
 
           {/* Audit Telemetry History */}
           {history.length > 0 && (
-            <div className="rounded-3xl glass-panel p-6 border border-white/10 space-y-3">
+            <div className="rounded-3xl glass-panel p-6 border border-white/10 space-y-3 shadow-elevation-md">
               <div className="flex items-center justify-between pb-2 border-b border-white/10">
-                <h3 className="text-xs font-mono uppercase tracking-wider text-slate-300 flex items-center gap-2 font-semibold">
-                  <Clock className="w-3.5 h-3.5 text-cyan-400" />
+                <h2 className="text-xs font-mono uppercase tracking-wider text-slate-300 flex items-center gap-2 font-semibold">
+                  <Clock className="w-3.5 h-3.5 text-blue-400" />
                   Recent Verification Telemetry
-                </h3>
-                <span className="text-[10px] font-mono text-slate-500">LAST {history.length} ATTEMPTS</span>
+                </h2>
+                <span className="text-xs font-mono text-slate-500">LAST {history.length} ATTEMPTS</span>
               </div>
 
               <div className="space-y-2">
@@ -223,23 +220,23 @@ export default function Verify() {
                           <XCircle className="w-4 h-4 text-rose-400 shrink-0" />
                         )}
                         <span className="font-bold">{pass ? 'MATCH CONFIRMED' : 'REJECTED'}</span>
-                        <span className="text-[10px] text-slate-400 font-sans hidden sm:inline">
+                        <span className="text-xs text-slate-400 font-sans hidden sm:inline">
                           ({h.match_count}/{h.total} samples)
                         </span>
                       </div>
 
                       <div className="flex items-center gap-3">
                         {h.latency && (
-                          <span className="text-[10px] text-slate-400">{h.latency}ms</span>
+                          <span className="text-xs text-slate-400">{h.latency}ms</span>
                         )}
-                        <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] border ${
+                        <span className={`px-2 py-0.5 rounded font-bold text-xs border ${
                           pass
                             ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-300'
                             : 'bg-rose-500/20 border-rose-500/30 text-rose-300'
                         }`}>
                           {pct}%
                         </span>
-                        <span className="text-[10px] text-slate-500">{h.timestamp}</span>
+                        <span className="text-xs text-slate-400">{h.timestamp}</span>
                       </div>
                     </div>
                   )

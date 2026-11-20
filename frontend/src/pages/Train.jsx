@@ -7,16 +7,13 @@ import {
   CheckCircle2, 
   AlertTriangle, 
   Clock, 
-  Activity, 
   Terminal, 
   RotateCcw, 
   ExternalLink, 
   ShieldCheck, 
   ArrowRight,
   RefreshCw,
-  X,
-  Layers,
-  Cpu
+  X
 } from 'lucide-react'
 import { startTraining, getTrainingStatus, uploadDataset } from '../services/api'
 
@@ -41,18 +38,18 @@ function MetricsTable({ metrics }) {
   const fmtPct = (v) => (v == null ? '—' : `${(v * 100).toFixed(1)}%`)
 
   const cells = [
-    { label: 'Loss', value: fmt(metrics?.loss), color: 'text-cyan-300' },
-    { label: 'Val Loss', value: fmt(metrics?.val_loss), color: 'text-indigo-300' },
-    { label: 'Accuracy', value: fmtPct(metrics?.accuracy), color: 'text-emerald-300' },
-    { label: 'Val Accuracy', value: fmtPct(metrics?.val_accuracy), color: 'text-teal-300' },
+    { label: 'Loss', value: fmt(metrics?.loss) },
+    { label: 'Val Loss', value: fmt(metrics?.val_loss) },
+    { label: 'Accuracy', value: fmtPct(metrics?.accuracy) },
+    { label: 'Val Accuracy', value: fmtPct(metrics?.val_accuracy) },
   ]
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-      {cells.map(({ label, value, color }) => (
+      {cells.map(({ label, value }) => (
         <div key={label} className="rounded-xl glass-pill p-3.5 text-center border border-white/5 bg-slate-950/40">
-          <div className="text-[10px] text-slate-400 mb-1 uppercase font-mono tracking-wider">{label}</div>
-          <div className={`text-xl font-mono font-bold ${color}`}>{value}</div>
+          <div className="text-xs text-slate-400 mb-1 uppercase font-mono tracking-wider">{label}</div>
+          <div className="text-xl font-mono font-bold text-white">{value}</div>
         </div>
       ))}
     </div>
@@ -64,11 +61,11 @@ function ProgressBar({ pct }) {
     <div className="space-y-1.5">
       <div className="flex justify-between text-xs font-mono">
         <span className="text-slate-400">Epoch Training Execution</span>
-        <span className="text-cyan-300 font-bold">{pct.toFixed(0)}%</span>
+        <span className="text-white font-bold">{pct.toFixed(0)}%</span>
       </div>
-      <div className="relative w-full h-3 bg-slate-950/80 rounded-full overflow-hidden border border-white/10 p-0.5">
+      <div className="relative w-full h-2.5 bg-slate-950 rounded-full overflow-hidden border border-white/10">
         <div
-          className="h-full bg-gradient-to-r from-cyan-500 via-sky-400 to-indigo-500 rounded-full transition-all duration-500 ease-out shadow-[0_0_12px_rgba(6,182,212,0.5)]"
+          className="h-full bg-blue-600 rounded-full transition-all duration-300 ease-out"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -86,16 +83,16 @@ function LogPanel({ logs }) {
   return (
     <div className="mt-4 space-y-2">
       <div className="flex items-center gap-2 text-xs font-mono text-slate-300">
-        <Terminal className="w-3.5 h-3.5 text-cyan-400" />
+        <Terminal className="w-3.5 h-3.5 text-blue-400" />
         <span>NEURAL LOG STREAM</span>
       </div>
-      <div className="rounded-2xl bg-slate-950/80 border border-white/10 p-4 h-48 overflow-y-auto font-mono text-[11px] text-slate-300 space-y-1 backdrop-blur-md">
+      <div className="rounded-2xl bg-slate-950/80 border border-white/10 p-4 h-48 overflow-y-auto font-mono text-xs text-slate-300 space-y-1 backdrop-blur-md">
         {logs.length === 0 ? (
           <span className="text-slate-500 italic">Awaiting telemetry stream from backend runner…</span>
         ) : (
           logs.map((line, i) => (
             <div key={i} className="leading-relaxed flex gap-2">
-              <span className="text-cyan-500/60 select-none">&gt;</span>
+              <span className="text-slate-500 select-none">&gt;</span>
               <span className="text-slate-300">{line}</span>
             </div>
           ))
@@ -162,14 +159,14 @@ function DatasetInstructionCard({ datasetReady, onRefresh, checking }) {
   }
 
   return (
-    <div className="rounded-3xl glass-panel p-6 sm:p-8 border border-white/10 space-y-5">
+    <div className="rounded-3xl glass-panel p-6 sm:p-8 border border-white/10 space-y-5 shadow-elevation-md">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-300">
+          <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-blue-400">
             <FileArchive className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="font-bold text-white text-base">LFW Background Dataset</h2>
+            <h2 className="font-bold text-white text-base [text-wrap:balance]">LFW Background Dataset</h2>
             <p className="text-xs text-slate-400">Required face negative/positive baseline for Siamese network training</p>
           </div>
         </div>
@@ -202,7 +199,7 @@ function DatasetInstructionCard({ datasetReady, onRefresh, checking }) {
       </div>
 
       <div className="text-xs text-slate-300 space-y-4">
-        <p className="leading-relaxed">
+        <p className="leading-relaxed [text-wrap:pretty]">
           The Siamese ConvNet learns discriminative face representations from the <strong className="text-white">Labeled Faces in the Wild (LFW)</strong> dataset. If you have the zip on your PC (or downloaded from Kaggle), drop it directly below:
         </p>
 
@@ -211,7 +208,7 @@ function DatasetInstructionCard({ datasetReady, onRefresh, checking }) {
             href="https://www.kaggle.com/datasets/jessicali9530/lfw-dataset?resource=download"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold glass-pill hover:bg-white/10 text-cyan-300 border border-cyan-500/30 hover:border-cyan-400/50 transition-all shadow-sm"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold glass-pill hover:bg-white/10 text-slate-200 border border-white/15 transition-all shadow-sm"
           >
             <span>Download LFW Dataset (.zip) from Kaggle</span>
             <ExternalLink className="w-3.5 h-3.5" />
@@ -219,7 +216,7 @@ function DatasetInstructionCard({ datasetReady, onRefresh, checking }) {
         </div>
 
         {/* Dropzone */}
-        <div className="rounded-2xl border border-dashed border-white/15 hover:border-cyan-400/50 bg-slate-950/40 p-5 transition-all">
+        <div className="rounded-2xl border border-dashed border-white/15 hover:border-slate-500 bg-slate-950/40 p-5 transition-all">
           <input
             type="file"
             accept=".zip"
@@ -234,13 +231,13 @@ function DatasetInstructionCard({ datasetReady, onRefresh, checking }) {
               htmlFor="dataset-zip-upload"
               className="flex flex-col items-center justify-center cursor-pointer py-4 space-y-2 text-center"
             >
-              <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-300 mb-1">
+              <div className="w-12 h-12 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-blue-400 mb-1">
                 <UploadCloud className="w-6 h-6" />
               </div>
               <div className="text-xs font-semibold text-slate-200">
-                Click to browse or drop your dataset <span className="font-mono text-cyan-400">.zip</span> archive here
+                Click to browse or drop your dataset <span className="font-mono text-white">.zip</span> archive here
               </div>
-              <div className="text-[11px] text-slate-400">Supports standard Kaggle lfw-dataset.zip format</div>
+              <div className="text-xs text-slate-400">Supports standard Kaggle lfw-dataset.zip format</div>
             </label>
           )}
 
@@ -248,10 +245,10 @@ function DatasetInstructionCard({ datasetReady, onRefresh, checking }) {
             <div className="space-y-3">
               <div className="flex items-center justify-between rounded-xl glass-pill p-3 border border-white/10">
                 <div className="flex items-center gap-2.5 overflow-hidden">
-                  <FileArchive className="w-5 h-5 text-cyan-400 shrink-0" />
+                  <FileArchive className="w-5 h-5 text-blue-400 shrink-0" />
                   <div className="truncate">
                     <div className="text-xs font-medium text-white truncate">{selectedFile.name}</div>
-                    <div className="text-[10px] font-mono text-slate-400">{formatFileSize(selectedFile.size)}</div>
+                    <div className="text-xs font-mono text-slate-400">{formatFileSize(selectedFile.size)}</div>
                   </div>
                 </div>
                 <button
@@ -269,7 +266,7 @@ function DatasetInstructionCard({ datasetReady, onRefresh, checking }) {
               <button
                 type="button"
                 onClick={handleUpload}
-                className="w-full py-2.5 px-4 rounded-xl font-bold text-xs uppercase tracking-wider text-white bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 shadow-glow-cyan transition-all flex items-center justify-center gap-2"
+                className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs uppercase tracking-wider text-white bg-blue-600 hover:bg-blue-500 shadow-md transition-all flex items-center justify-center gap-2"
               >
                 <UploadCloud className="w-4 h-4" />
                 <span>Upload &amp; Decompress Dataset</span>
@@ -279,21 +276,21 @@ function DatasetInstructionCard({ datasetReady, onRefresh, checking }) {
 
           {uploading && (
             <div className="py-4 space-y-3 text-center">
-              <div className="flex items-center justify-center gap-2 text-xs font-mono text-cyan-300 font-semibold">
-                <RefreshCw className="w-4 h-4 animate-spin text-cyan-400" />
+              <div className="flex items-center justify-center gap-2 text-xs font-mono text-slate-200 font-semibold">
+                <RefreshCw className="w-4 h-4 animate-spin text-blue-400" />
                 <span>
                   {uploadProgress < 100
                     ? `Streaming Archive (${uploadProgress}%)…`
                     : 'Decompressing & Mapping Face Directories…'}
                 </span>
               </div>
-              <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-white/10 p-0.5">
+              <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-white/10">
                 <div
-                  className="bg-gradient-to-r from-cyan-400 to-indigo-500 h-full rounded-full transition-all duration-300 shadow-[0_0_8px_#22d3ee]"
+                  className="bg-blue-500 h-full rounded-full transition-all duration-300"
                   style={{ width: `${uploadProgress}%` }}
                 />
               </div>
-              <p className="text-[10px] text-slate-400">Decompressing multi-thousand face images into local storage.</p>
+              <p className="text-xs text-slate-400">Decompressing multi-thousand face images into local storage.</p>
             </div>
           )}
 
@@ -519,20 +516,20 @@ export default function Train() {
   if (status === 'complete') {
     return (
       <div className="max-w-2xl mx-auto py-8 space-y-6">
-        <div className="rounded-3xl glass-panel p-8 sm:p-12 text-center space-y-5 border border-emerald-500/30 shadow-glow-emerald">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 flex items-center justify-center mx-auto shadow-inner">
-            <ShieldCheck className="w-8 h-8" />
+        <div className="rounded-3xl glass-panel p-8 sm:p-10 space-y-6 border border-emerald-500/30 shadow-elevation-md">
+          <div className="flex items-start gap-4">
+            <ShieldCheck className="w-10 h-10 text-emerald-400 shrink-0 mt-1" />
+            <div>
+              <h1 className="text-3xl font-extrabold text-white tracking-tight [text-wrap:balance]">Siamese Model Calibrated</h1>
+              <p className="text-xs text-slate-300 mt-2 leading-relaxed [text-wrap:pretty]">
+                Neural weights exported to <code className="text-slate-200 font-mono">siamesemodel.h5</code>. Real-time one-shot verification is fully armed.
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-3xl font-extrabold text-white tracking-tight">Siamese Model Calibrated</h1>
-            <p className="text-xs text-slate-300 max-w-sm mx-auto mt-2 leading-relaxed">
-              Neural weights exported to <code className="text-cyan-300 font-mono">siamesemodel.h5</code>. Real-time one-shot verification is fully armed.
-            </p>
-          </div>
-          <div className="flex gap-3 justify-center flex-wrap pt-3">
+          <div className="flex gap-3 pt-2">
             <Link
               to="/verify"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-wider text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 shadow-glow-emerald transition-all"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-xs uppercase tracking-wider text-white bg-blue-600 hover:bg-blue-500 shadow-md transition-all"
             >
               <ShieldCheck className="w-4 h-4" />
               <span>Launch Verification</span>
@@ -557,26 +554,26 @@ export default function Train() {
       <div className="max-w-3xl mx-auto py-6 space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-300">
+            <div className="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-blue-400">
               <RefreshCw className="w-4 h-4 animate-spin" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white tracking-tight">Neural Training In Progress</h1>
+              <h1 className="text-2xl font-bold text-white tracking-tight [text-wrap:balance]">Neural Training In Progress</h1>
               <p className="text-xs text-slate-400">Optimizing binary cross-entropy on twin feature vectors</p>
             </div>
           </div>
           {etaSeconds != null && (
-            <div className="glass-pill px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-mono text-cyan-300 border border-cyan-500/30">
-              <Clock className="w-3.5 h-3.5 text-cyan-400" />
+            <div className="glass-pill px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-mono text-slate-200 border border-white/10">
+              <Clock className="w-3.5 h-3.5 text-blue-400" />
               <span>ETA ~{formatETA(etaSeconds)}</span>
             </div>
           )}
         </div>
 
-        <div className="rounded-3xl glass-panel p-6 sm:p-8 space-y-6 border border-white/10">
+        <div className="rounded-3xl glass-panel p-6 sm:p-8 space-y-6 border border-white/10 shadow-elevation-md">
           <div className="flex items-center justify-between text-xs font-mono">
             <span className="text-slate-300">
-              Epoch <span className="text-cyan-300 font-bold">{currentEpoch}</span>
+              Epoch <span className="text-white font-bold">{currentEpoch}</span>
               {totalEpochs > 0 && <span className="text-slate-500"> / {totalEpochs}</span>}
             </span>
             <span className="text-slate-400">Adam Optimizer (lr=1e-4)</span>
@@ -594,13 +591,13 @@ export default function Train() {
   if (status === 'error') {
     return (
       <div className="max-w-2xl mx-auto py-8 space-y-6">
-        <div className="rounded-3xl glass-panel p-6 sm:p-8 border border-rose-500/30 space-y-5 bg-rose-950/20">
+        <div className="rounded-3xl glass-panel p-6 sm:p-8 border border-rose-500/30 space-y-5 bg-rose-950/20 shadow-elevation-md">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-400/40 text-rose-300 flex items-center justify-center">
               <AlertTriangle className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-rose-300">Training Execution Exception</h1>
+              <h1 className="text-xl font-bold text-rose-300 [text-wrap:balance]">Training Execution Exception</h1>
               <p className="text-xs text-slate-400">Pipeline encountered a non-recoverable error</p>
             </div>
           </div>
@@ -614,7 +611,7 @@ export default function Train() {
           <div className="flex gap-3 pt-1">
             <button
               onClick={handleRetrain}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider text-white bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 transition-all shadow-glow-cyan"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold uppercase tracking-wider text-white bg-blue-600 hover:bg-blue-500 transition-all shadow-md"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Retry Training</span>
@@ -635,13 +632,13 @@ export default function Train() {
   return (
     <div className="max-w-3xl mx-auto py-4 space-y-6">
       <div>
-        <div className="inline-flex items-center gap-2 text-xs font-mono text-cyan-400 glass-pill px-3 py-1 rounded-full mb-2">
-          <BrainCircuit className="w-3.5 h-3.5" /> NEURAL CALIBRATION LABORATORY
+        <div className="inline-flex items-center gap-2 text-xs font-mono text-slate-300 glass-pill px-3 py-1 rounded-full mb-2">
+          <BrainCircuit className="w-3.5 h-3.5 text-blue-400" /> NEURAL CALIBRATION LABORATORY
         </div>
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight [text-wrap:balance]">
           Train Siamese Neural Network
         </h1>
-        <p className="text-sm text-slate-300 mt-1">
+        <p className="text-sm text-slate-300 mt-1 [text-wrap:pretty]">
           Train the dual convolutional subnets on negative LFW pairs and your positive face vectors.
         </p>
       </div>
@@ -654,31 +651,31 @@ export default function Train() {
       />
 
       {/* Initiation Control Card */}
-      <div className="rounded-3xl glass-panel p-6 sm:p-8 text-center space-y-4 border border-white/10">
-        <p className="text-xs text-slate-300 max-w-md mx-auto">
+      <div className="rounded-3xl glass-panel p-6 sm:p-8 text-center space-y-4 border border-white/10 shadow-elevation-md">
+        <p className="text-xs text-slate-300 max-w-md mx-auto [text-wrap:pretty]">
           Training runs in background with live epoch loss, precision, and accuracy telemetry. Requires ~5 minutes on CPU.
         </p>
 
         <button
           onClick={handleStart}
           disabled={starting}
-          className="px-8 py-3.5 rounded-2xl font-bold text-xs uppercase tracking-wider text-white bg-gradient-to-r from-cyan-500 via-sky-600 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed shadow-glow-cyan transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] inline-flex items-center gap-2.5 mx-auto"
+          className="px-8 py-3.5 rounded-2xl font-semibold text-xs uppercase tracking-wider text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed shadow-md transition-all active:scale-[0.99] inline-flex items-center gap-2.5 mx-auto"
         >
           {starting ? (
             <>
-              <RefreshCw className="w-4 h-4 animate-spin text-cyan-200" />
+              <RefreshCw className="w-4 h-4 animate-spin text-white" />
               <span>Compiling Tensor Graph…</span>
             </>
           ) : (
             <>
-              <BrainCircuit className="w-4 h-4 text-cyan-200" />
+              <BrainCircuit className="w-4 h-4 text-white" />
               <span>Initiate Siamese Training</span>
             </>
           )}
         </button>
 
         <div className="pt-2">
-          <Link to="/verify" className="text-xs text-cyan-400/80 hover:text-cyan-300 inline-flex items-center gap-1 font-mono">
+          <Link to="/verify" className="text-xs text-slate-400 hover:text-white inline-flex items-center gap-1 font-mono">
             <span>Skip to Verification if model exists</span>
             <ArrowRight className="w-3 h-3" />
           </Link>
