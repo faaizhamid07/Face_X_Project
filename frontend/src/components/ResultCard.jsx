@@ -1,4 +1,4 @@
-import { ShieldCheck, ShieldAlert, CheckCircle, XCircle, RotateCcw, Cpu, Layers } from 'lucide-react'
+import { ShieldCheck, ShieldAlert, RotateCcw, Cpu, Layers } from 'lucide-react'
 
 export default function ResultCard({ result, onReset }) {
   if (!result) return null
@@ -8,19 +8,19 @@ export default function ResultCard({ result, onReset }) {
 
   return (
     <div
-      className={`rounded-3xl p-6 sm:p-8 mt-6 backdrop-blur-2xl border transition-all duration-500 shadow-glass-lg ${
+      className={`rounded-3xl p-6 sm:p-8 mt-6 border transition-all duration-300 shadow-elevation-md ${
         verified
-          ? 'bg-emerald-950/20 border-emerald-500/40 shadow-glow-emerald'
-          : 'bg-rose-950/20 border-rose-500/40 shadow-[0_0_25px_-3px_rgba(244,63,94,0.3)]'
+          ? 'bg-emerald-950/20 border-emerald-500/30'
+          : 'bg-rose-950/20 border-rose-500/30'
       }`}
     >
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-4">
           <div
-            className={`w-14 h-14 rounded-2xl flex items-center justify-center border shadow-inner ${
+            className={`w-14 h-14 rounded-2xl flex items-center justify-center border ${
               verified
-                ? 'bg-emerald-500/20 border-emerald-400/50 text-emerald-300'
-                : 'bg-rose-500/20 border-rose-400/50 text-rose-300'
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
             }`}
           >
             {verified ? (
@@ -31,12 +31,12 @@ export default function ResultCard({ result, onReset }) {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className={`text-xl font-extrabold tracking-tight ${
-                verified ? 'text-emerald-300' : 'text-rose-300'
+              <h3 className={`text-xl font-bold tracking-tight [text-wrap:balance] ${
+                verified ? 'text-emerald-400' : 'text-rose-400'
               }`}>
-                {verified ? 'BIOMETRIC MATCH CONFIRMED' : 'AUTHENTICATION FAILED'}
+                {verified ? 'Biometric Match Confirmed' : 'Authentication Failed'}
               </h3>
-              <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
+              <span className={`text-xs font-mono px-2 py-0.5 rounded border ${
                 verified
                   ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
                   : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
@@ -44,15 +44,15 @@ export default function ResultCard({ result, onReset }) {
                 {verified ? 'PASSED' : 'REJECTED'}
               </span>
             </div>
-            <p className="text-xs text-slate-300/80 mt-1">{message}</p>
+            <p className="text-xs text-slate-300 mt-1 [text-wrap:pretty]">{message}</p>
           </div>
         </div>
 
-        {/* Big percentage badge */}
+        {/* Confidence Percentage */}
         <div className="flex flex-col items-end">
-          <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Match Confidence</span>
-          <span className={`text-3xl font-black font-mono tracking-tight ${
-            verified ? 'text-emerald-300' : 'text-rose-400'
+          <span className="text-xs font-mono uppercase tracking-wider text-slate-400">Match Confidence</span>
+          <span className={`text-3xl font-bold font-mono tracking-tight ${
+            verified ? 'text-emerald-400' : 'text-rose-400'
           }`}>
             {pct}%
           </span>
@@ -61,37 +61,37 @@ export default function ResultCard({ result, onReset }) {
 
       {/* Confidence gauge bar */}
       <div className="space-y-1.5 mb-6">
-        <div className="h-2.5 w-full bg-slate-900/80 rounded-full overflow-hidden p-0.5 border border-white/10">
+        <div className="h-2 w-full bg-slate-900 rounded-full overflow-hidden border border-white/10">
           <div
-            className={`h-full rounded-full transition-all duration-1000 ease-out ${
+            className={`h-full rounded-full transition-all duration-700 ease-out ${
               verified
-                ? 'bg-gradient-to-r from-teal-400 to-emerald-400 shadow-[0_0_12px_#34d399]'
-                : 'bg-gradient-to-r from-amber-500 to-rose-500 shadow-[0_0_12px_#f43f5e]'
+                ? 'bg-emerald-500'
+                : 'bg-rose-500'
             }`}
             style={{ width: `${pct}%` }}
           />
         </div>
       </div>
 
-      {/* Forensic Metadata Pills */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-3 rounded-2xl bg-slate-950/40 border border-white/5 mb-6 text-xs font-mono">
+      {/* Flattened Forensic Metadata (divided by top border, no nested card) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4 border-t border-white/10 mb-6 text-xs font-mono">
         <div>
-          <span className="text-[10px] text-slate-500 uppercase block">Sample Consensus</span>
-          <span className="text-slate-200 font-semibold flex items-center gap-1 mt-0.5">
-            <Layers className="w-3.5 h-3.5 text-cyan-400" />
+          <span className="text-slate-400 uppercase block">Sample Consensus</span>
+          <span className="text-slate-200 font-semibold flex items-center gap-1.5 mt-1">
+            <Layers className="w-4 h-4 text-blue-400" />
             {match_count} of {total} images matched
           </span>
         </div>
         <div>
-          <span className="text-[10px] text-slate-500 uppercase block">Inference Engine</span>
-          <span className="text-slate-200 font-semibold flex items-center gap-1 mt-0.5">
-            <Cpu className="w-3.5 h-3.5 text-indigo-400" />
+          <span className="text-slate-400 uppercase block">Inference Engine</span>
+          <span className="text-slate-200 font-semibold flex items-center gap-1.5 mt-1">
+            <Cpu className="w-4 h-4 text-blue-400" />
             {engine || 'Siamese ConvNet'}
           </span>
         </div>
         <div className="col-span-2 sm:col-span-1">
-          <span className="text-[10px] text-slate-500 uppercase block">Decision Metric</span>
-          <span className="text-slate-200 font-semibold mt-0.5 block truncate">
+          <span className="text-slate-400 uppercase block">Decision Metric</span>
+          <span className="text-slate-200 font-semibold mt-1 block truncate">
             L1 Distance ≤ Threshold
           </span>
         </div>
