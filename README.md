@@ -101,9 +101,32 @@ Face_X_Project/
 					...
 ```
 
-## 3) Run the Backend API
+## 3) Quick Start: Run Everything with 1 Command
 
-From `backend/`, run:
+Once dependencies are installed, you can launch both backend and frontend simultaneously:
+
+```bash
+python run.py
+```
+
+*On Windows, you can also simply double-click `run.bat`.*
+
+This will:
+- Automatically use the backend virtual environment.
+- Start both FastAPI (`http://localhost:8000`) and the React UI (`http://localhost:5173`).
+- Stream logs from both services with colored prefixes.
+- Automatically open your browser to `http://localhost:5173`.
+- Press `Ctrl+C` in the terminal to cleanly terminate both servers at once.
+
+---
+
+## 4) Alternative: Run Separately (For Individual Development)
+
+If you prefer to debug or develop the backend and frontend in separate terminals:
+
+### Run Backend API
+
+From `backend/`:
 
 **Windows PowerShell:**
 
@@ -118,27 +141,24 @@ python -m uvicorn app.main:app --reload --port 8000
 ```
 
 Health check:
-
 ```bash
 curl http://localhost:8000/health
 ```
 
 API docs:
-
 ```text
 http://localhost:8000/docs
 ```
 
-## 4) Run the Frontend
+### Run Frontend
 
-From `frontend/`:
+In a second terminal, from `frontend/`:
 
 ```bash
 npm run dev
 ```
 
 Open:
-
 ```text
 http://localhost:5173
 ```
