@@ -1,5 +1,23 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
+import { 
+  BrainCircuit, 
+  UploadCloud, 
+  FileArchive, 
+  CheckCircle2, 
+  AlertTriangle, 
+  Clock, 
+  Activity, 
+  Terminal, 
+  RotateCcw, 
+  ExternalLink, 
+  ShieldCheck, 
+  ArrowRight,
+  RefreshCw,
+  X,
+  Layers,
+  Cpu
+} from 'lucide-react'
 import { startTraining, getTrainingStatus, uploadDataset } from '../services/api'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -9,7 +27,7 @@ function formatETA(seconds) {
   if (seconds < 60) return `${Math.round(seconds)} sec`
   const m = Math.floor(seconds / 60)
   const s = Math.round(seconds % 60)
-  return s > 0 ? `${m} min ${s} sec` : `${m} min`
+  return s > 0 ? `${m}m ${s}s` : `${m}m`
 }
 
 function now() {
@@ -18,31 +36,23 @@ function now() {
 
 // ─── Sub-components ─────────────────────────────────────────────────────────
 
-function Card({ children, className = '' }) {
-  return (
-    <div className={`bg-gray-900 border border-gray-800 rounded-2xl p-6 ${className}`}>
-      {children}
-    </div>
-  )
-}
-
 function MetricsTable({ metrics }) {
   const fmt = (v) => (v == null ? '—' : typeof v === 'number' ? v.toFixed(4) : v)
   const fmtPct = (v) => (v == null ? '—' : `${(v * 100).toFixed(1)}%`)
 
   const cells = [
-    { label: 'Loss', value: fmt(metrics?.loss) },
-    { label: 'Val Loss', value: fmt(metrics?.val_loss) },
-    { label: 'Accuracy', value: fmtPct(metrics?.accuracy) },
-    { label: 'Val Accuracy', value: fmtPct(metrics?.val_accuracy) },
+    { label: 'Loss', value: fmt(metrics?.loss), color: 'text-cyan-300' },
+    { label: 'Val Loss', value: fmt(metrics?.val_loss), color: 'text-indigo-300' },
+    { label: 'Accuracy', value: fmtPct(metrics?.accuracy), color: 'text-emerald-300' },
+    { label: 'Val Accuracy', value: fmtPct(metrics?.val_accuracy), color: 'text-teal-300' },
   ]
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-      {cells.map(({ label, value }) => (
-        <div key={label} className="bg-gray-800/60 border border-gray-700 rounded-xl p-3 text-center">
-          <div className="text-xs text-gray-500 mb-1 uppercase tracking-wider">{label}</div>
-          <div className="text-lg font-mono font-semibold text-blue-300">{value}</div>
+      {cells.map(({ label, value, color }) => (
+        <div key={label} className="rounded-xl glass-pill p-3.5 text-center border border-white/5 bg-slate-950/40">
+          <div className="text-[10px] text-slate-400 mb-1 uppercase font-mono tracking-wider">{label}</div>
+          <div className={`text-xl font-mono font-bold ${color}`}>{value}</div>
         </div>
       ))}
     </div>
@@ -51,21 +61,18 @@ function MetricsTable({ metrics }) {
 
 function ProgressBar({ pct }) {
   return (
-    <div className="relative w-full h-4 bg-gray-800 rounded-full overflow-hidden border border-gray-700">
-      <div
-        className="h-full bg-gradient-to-r from-blue-600 to-blue-400 rounded-full transition-all duration-500 ease-out"
-        style={{ width: `${pct}%` }}
-      />
-      <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white drop-shadow">
-        {pct.toFixed(0)}%
-      </span>
+    <div className="space-y-1.5">
+      <div className="flex justify-between text-xs font-mono">
+        <span className="text-slate-400">Epoch Training Execution</span>
+        <span className="text-cyan-300 font-bold">{pct.toFixed(0)}%</span>
+      </div>
+      <div className="relative w-full h-3 bg-slate-950/80 rounded-full overflow-hidden border border-white/10 p-0.5">
+        <div
+          className="h-full bg-gradient-to-r from-cyan-500 via-sky-400 to-indigo-500 rounded-full transition-all duration-500 ease-out shadow-[0_0_12px_rgba(6,182,212,0.5)]"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
     </div>
-  )
-}
-
-function Spinner() {
-  return (
-    <span className="inline-block w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin align-middle" />
   )
 }
 
@@ -77,15 +84,19 @@ function LogPanel({ logs }) {
   }, [logs])
 
   return (
-    <div className="mt-4">
-      <div className="text-sm font-semibold text-gray-300 mb-2">📋 Training Log</div>
-      <div className="bg-gray-950 border border-gray-800 rounded-xl p-3 h-48 overflow-y-auto font-mono text-xs text-gray-400 space-y-0.5">
+    <div className="mt-4 space-y-2">
+      <div className="flex items-center gap-2 text-xs font-mono text-slate-300">
+        <Terminal className="w-3.5 h-3.5 text-cyan-400" />
+        <span>NEURAL LOG STREAM</span>
+      </div>
+      <div className="rounded-2xl bg-slate-950/80 border border-white/10 p-4 h-48 overflow-y-auto font-mono text-[11px] text-slate-300 space-y-1 backdrop-blur-md">
         {logs.length === 0 ? (
-          <span className="text-gray-600">Waiting for log output…</span>
+          <span className="text-slate-500 italic">Awaiting telemetry stream from backend runner…</span>
         ) : (
           logs.map((line, i) => (
-            <div key={i} className="leading-5">
-              {line}
+            <div key={i} className="leading-relaxed flex gap-2">
+              <span className="text-cyan-500/60 select-none">&gt;</span>
+              <span className="text-slate-300">{line}</span>
             </div>
           ))
         )}
@@ -99,14 +110,14 @@ function DatasetInstructionCard({ datasetReady, onRefresh, checking }) {
   const [selectedFile, setSelectedFile] = useState(null)
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
-  const [uploadStatus, setUploadStatus] = useState(null) // { type: 'success' | 'error', message: string }
+  const [uploadStatus, setUploadStatus] = useState(null)
   const fileInputRef = useRef(null)
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
     if (!file.name.toLowerCase().endsWith('.zip')) {
-      setUploadStatus({ type: 'error', message: 'Please select a valid .zip file.' })
+      setUploadStatus({ type: 'error', message: 'Please select a valid .zip archive file.' })
       return
     }
     setSelectedFile(file)
@@ -151,25 +162,28 @@ function DatasetInstructionCard({ datasetReady, onRefresh, checking }) {
   }
 
   return (
-    <Card className="border-blue-900/50 bg-blue-950/20 space-y-4">
+    <div className="rounded-3xl glass-panel p-6 sm:p-8 border border-white/10 space-y-5">
       <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-2.5">
-          <span className="text-2xl">📦</span>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-300">
+            <FileArchive className="w-5 h-5" />
+          </div>
           <div>
-            <h2 className="font-semibold text-blue-300 text-base">LFW Training Dataset</h2>
-            <p className="text-xs text-gray-400">Required background face dataset for Siamese network training</p>
+            <h2 className="font-bold text-white text-base">LFW Background Dataset</h2>
+            <p className="text-xs text-slate-400">Required face negative/positive baseline for Siamese network training</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {datasetReady != null && (
             <span
-              className={`text-xs px-2.5 py-1 rounded-full font-medium border ${
+              className={`text-xs px-3 py-1 rounded-full font-mono font-medium border flex items-center gap-1.5 ${
                 datasetReady
-                  ? 'bg-green-950/70 text-green-400 border-green-800'
-                  : 'bg-yellow-950/70 text-yellow-300 border-yellow-800'
+                  ? 'bg-emerald-950/50 text-emerald-300 border-emerald-500/40'
+                  : 'bg-amber-950/50 text-amber-300 border-amber-500/40'
               }`}
             >
-              {datasetReady ? '✓ Dataset Detected' : '⚠️ Dataset Missing'}
+              <span className={`w-1.5 h-1.5 rounded-full ${datasetReady ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+              {datasetReady ? 'Dataset Verified' : 'Dataset Required'}
             </span>
           )}
           {onRefresh && (
@@ -177,18 +191,19 @@ function DatasetInstructionCard({ datasetReady, onRefresh, checking }) {
               type="button"
               onClick={onRefresh}
               disabled={checking}
-              className="text-xs px-2.5 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition-colors"
-              title="Check dataset directory"
+              className="text-xs px-3 py-1 rounded-xl glass-pill hover:bg-white/10 text-slate-300 transition-colors flex items-center gap-1.5"
+              title="Rescan dataset directory"
             >
-              {checking ? 'Checking…' : '🔄 Check'}
+              <RefreshCw className={`w-3 h-3 ${checking ? 'animate-spin' : ''}`} />
+              <span>{checking ? 'Scanning…' : 'Rescan'}</span>
             </button>
           )}
         </div>
       </div>
 
-      <div className="text-sm text-gray-300 space-y-4">
-        <p>
-          The Siamese Neural Network requires the <strong>Labeled Faces in the Wild (LFW)</strong> dataset. You can download the zip file from Kaggle and upload it directly below:
+      <div className="text-xs text-slate-300 space-y-4">
+        <p className="leading-relaxed">
+          The Siamese ConvNet learns discriminative face representations from the <strong className="text-white">Labeled Faces in the Wild (LFW)</strong> dataset. If you have the zip on your PC (or downloaded from Kaggle), drop it directly below:
         </p>
 
         <div>
@@ -196,16 +211,15 @@ function DatasetInstructionCard({ datasetReady, onRefresh, checking }) {
             href="https://www.kaggle.com/datasets/jessicali9530/lfw-dataset?resource=download"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600/90 hover:bg-blue-600 text-white text-sm font-semibold rounded-xl transition-colors shadow group"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold glass-pill hover:bg-white/10 text-cyan-300 border border-cyan-500/30 hover:border-cyan-400/50 transition-all shadow-sm"
           >
-            <span>⬇️</span>
             <span>Download LFW Dataset (.zip) from Kaggle</span>
-            <span className="text-xs text-blue-200 group-hover:translate-x-0.5 transition-transform">↗</span>
+            <ExternalLink className="w-3.5 h-3.5" />
           </a>
         </div>
 
-        {/* Upload ZIP File Area */}
-        <div className="border border-dashed border-gray-700 hover:border-blue-500/70 bg-gray-950/60 rounded-xl p-4 transition-colors">
+        {/* Dropzone */}
+        <div className="rounded-2xl border border-dashed border-white/15 hover:border-cyan-400/50 bg-slate-950/40 p-5 transition-all">
           <input
             type="file"
             accept=".zip"
@@ -218,24 +232,26 @@ function DatasetInstructionCard({ datasetReady, onRefresh, checking }) {
           {!selectedFile && !uploading && (
             <label
               htmlFor="dataset-zip-upload"
-              className="flex flex-col items-center justify-center cursor-pointer py-3 space-y-2 text-center"
+              className="flex flex-col items-center justify-center cursor-pointer py-4 space-y-2 text-center"
             >
-              <div className="text-3xl">📁</div>
-              <div className="text-sm font-medium text-blue-300">
-                Click to browse or drop your dataset <span className="font-mono text-xs">.zip</span> file here
+              <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-300 mb-1">
+                <UploadCloud className="w-6 h-6" />
               </div>
-              <div className="text-xs text-gray-500">Supports Kaggle lfw-dataset.zip</div>
+              <div className="text-xs font-semibold text-slate-200">
+                Click to browse or drop your dataset <span className="font-mono text-cyan-400">.zip</span> archive here
+              </div>
+              <div className="text-[11px] text-slate-400">Supports standard Kaggle lfw-dataset.zip format</div>
             </label>
           )}
 
           {selectedFile && !uploading && (
             <div className="space-y-3">
-              <div className="flex items-center justify-between bg-gray-900 border border-gray-800 rounded-lg p-3">
+              <div className="flex items-center justify-between rounded-xl glass-pill p-3 border border-white/10">
                 <div className="flex items-center gap-2.5 overflow-hidden">
-                  <span className="text-xl">🗜️</span>
+                  <FileArchive className="w-5 h-5 text-cyan-400 shrink-0" />
                   <div className="truncate">
                     <div className="text-xs font-medium text-white truncate">{selectedFile.name}</div>
-                    <div className="text-[11px] text-gray-500">{formatFileSize(selectedFile.size)}</div>
+                    <div className="text-[10px] font-mono text-slate-400">{formatFileSize(selectedFile.size)}</div>
                   </div>
                 </div>
                 <button
@@ -244,58 +260,62 @@ function DatasetInstructionCard({ datasetReady, onRefresh, checking }) {
                     setSelectedFile(null)
                     if (fileInputRef.current) fileInputRef.current.value = ''
                   }}
-                  className="text-gray-400 hover:text-red-400 text-xs px-2 py-1 rounded transition-colors"
+                  className="text-slate-400 hover:text-rose-400 text-xs px-2 py-1 rounded-lg transition-colors"
                 >
-                  ✕ Remove
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
               <button
                 type="button"
                 onClick={handleUpload}
-                className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm rounded-xl transition-colors shadow flex items-center justify-center gap-2"
+                className="w-full py-2.5 px-4 rounded-xl font-bold text-xs uppercase tracking-wider text-white bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 shadow-glow-cyan transition-all flex items-center justify-center gap-2"
               >
-                <span>🚀</span>
-                <span>Upload & Extract Dataset</span>
+                <UploadCloud className="w-4 h-4" />
+                <span>Upload &amp; Decompress Dataset</span>
               </button>
             </div>
           )}
 
           {uploading && (
-            <div className="py-3 space-y-2 text-center">
-              <div className="flex items-center justify-center gap-2 text-sm text-blue-300 font-medium">
-                <Spinner />
+            <div className="py-4 space-y-3 text-center">
+              <div className="flex items-center justify-center gap-2 text-xs font-mono text-cyan-300 font-semibold">
+                <RefreshCw className="w-4 h-4 animate-spin text-cyan-400" />
                 <span>
                   {uploadProgress < 100
-                    ? `Uploading dataset (${uploadProgress}%)…`
-                    : 'Extracting dataset into project…'}
+                    ? `Streaming Archive (${uploadProgress}%)…`
+                    : 'Decompressing & Mapping Face Directories…'}
                 </span>
               </div>
-              <div className="w-full bg-gray-800 rounded-full h-2 overflow-hidden border border-gray-700">
+              <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-white/10 p-0.5">
                 <div
-                  className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                  className="bg-gradient-to-r from-cyan-400 to-indigo-500 h-full rounded-full transition-all duration-300 shadow-[0_0_8px_#22d3ee]"
                   style={{ width: `${uploadProgress}%` }}
                 />
               </div>
-              <p className="text-[11px] text-gray-500">Please keep this window open while processing.</p>
+              <p className="text-[10px] text-slate-400">Decompressing multi-thousand face images into local storage.</p>
             </div>
           )}
 
           {uploadStatus && (
             <div
-              className={`mt-3 p-3 rounded-xl text-xs flex items-center gap-2 ${
+              className={`mt-3 p-3 rounded-xl text-xs font-medium flex items-center gap-2.5 ${
                 uploadStatus.type === 'success'
-                  ? 'bg-green-950/60 border border-green-800 text-green-300'
-                  : 'bg-red-950/60 border border-red-800 text-red-300'
+                  ? 'bg-emerald-950/40 border border-emerald-500/30 text-emerald-200'
+                  : 'bg-rose-950/40 border border-rose-500/30 text-rose-200'
               }`}
             >
-              <span>{uploadStatus.type === 'success' ? '✅' : '❌'}</span>
+              {uploadStatus.type === 'success' ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              ) : (
+                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+              )}
               <span>{uploadStatus.message}</span>
             </div>
           )}
         </div>
       </div>
-    </Card>
+    </div>
   )
 }
 
@@ -305,7 +325,7 @@ const SSE_URL = '/api/train/stream'
 const MAX_LOGS = 100
 
 export default function Train() {
-  const [status, setStatus] = useState('idle') // idle | running | complete | error
+  const [status, setStatus] = useState('idle')
   const [currentEpoch, setCurrentEpoch] = useState(0)
   const [totalEpochs, setTotalEpochs] = useState(0)
   const [metrics, setMetrics] = useState(null)
@@ -319,7 +339,6 @@ export default function Train() {
 
   const esRef = useRef(null)
 
-  // ── Log helper ──────────────────────────────────────────────────────────
   const addLog = useCallback((msg) => {
     setLogs((prev) => {
       const entry = `[${now()}] ${msg}`
@@ -328,7 +347,6 @@ export default function Train() {
     })
   }, [])
 
-  // ── Open SSE ────────────────────────────────────────────────────────────
   const connectSSE = useCallback(() => {
     if (esRef.current) {
       esRef.current.close()
@@ -386,7 +404,6 @@ export default function Train() {
     })
 
     es.onerror = () => {
-      // Only treat as fatal if we haven't already finished
       setStatus((prev) => {
         if (prev === 'running') {
           setErrorMsg('Lost connection to training stream.')
@@ -429,7 +446,6 @@ export default function Train() {
     })
   }, [addLog])
 
-  // ── Refresh training & dataset status ────────────────────────────────────
   const refreshStatus = useCallback(async () => {
     setCheckingDataset(true)
     try {
@@ -440,17 +456,16 @@ export default function Train() {
         setStatus('complete')
       } else if (data.state === 'running') {
         setStatus('running')
-        addLog('Reconnecting to running training session…')
+        addLog('Reconnecting to active neural training session…')
         connectSSE()
       }
     } catch {
-      // Backend not reachable — stay idle
+      // Backend offline
     } finally {
       setCheckingDataset(false)
     }
   }, [addLog, connectSSE])
 
-  // ── On mount: check status ───────────────────────────────────────────────
   useEffect(() => {
     refreshStatus()
     return () => {
@@ -459,7 +474,6 @@ export default function Train() {
     }
   }, [refreshStatus])
 
-  // ── Start training ───────────────────────────────────────────────────────
   async function handleStart() {
     setStarting(true)
     setErrorMsg('')
@@ -470,7 +484,7 @@ export default function Train() {
     setEtaSeconds(null)
     try {
       await startTraining()
-      addLog('Training started — connecting to stream…')
+      addLog('Initiating Siamese optimization tensor pipeline…')
       setStatus('running')
       connectSSE()
     } catch (err) {
@@ -486,7 +500,6 @@ export default function Train() {
     }
   }
 
-  // ── Retrain ──────────────────────────────────────────────────────────────
   function handleRetrain() {
     esRef.current?.close()
     esRef.current = null
@@ -500,39 +513,40 @@ export default function Train() {
     refreshStatus()
   }
 
-  // ── Derived ──────────────────────────────────────────────────────────────
   const pct = totalEpochs > 0 ? Math.min(100, (currentEpoch / totalEpochs) * 100) : 0
-
-  // ════════════════════════════════════════════════════════════════════════
-  // RENDER
-  // ════════════════════════════════════════════════════════════════════════
 
   // ── COMPLETE ─────────────────────────────────────────────────────────────
   if (status === 'complete') {
     return (
       <div className="max-w-2xl mx-auto py-8 space-y-6">
-        <Card className="text-center space-y-4">
-          <div className="text-6xl">✅</div>
-          <h1 className="text-3xl font-extrabold text-green-400">Model Trained Successfully!</h1>
-          <p className="text-gray-400 max-w-sm mx-auto">
-            Your Siamese Network has been trained and loaded. You can now verify your identity using
-            your face.
-          </p>
-          <div className="flex gap-4 justify-center flex-wrap pt-2">
+        <div className="rounded-3xl glass-panel p-8 sm:p-12 text-center space-y-5 border border-emerald-500/30 shadow-glow-emerald">
+          <div className="w-16 h-16 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 flex items-center justify-center mx-auto shadow-inner">
+            <ShieldCheck className="w-8 h-8" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-extrabold text-white tracking-tight">Siamese Model Calibrated</h1>
+            <p className="text-xs text-slate-300 max-w-sm mx-auto mt-2 leading-relaxed">
+              Neural weights exported to <code className="text-cyan-300 font-mono">siamesemodel.h5</code>. Real-time one-shot verification is fully armed.
+            </p>
+          </div>
+          <div className="flex gap-3 justify-center flex-wrap pt-3">
             <Link
               to="/verify"
-              className="px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-xl transition-colors shadow-lg"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-wider text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 shadow-glow-emerald transition-all"
             >
-              🔍 Go Verify →
+              <ShieldCheck className="w-4 h-4" />
+              <span>Launch Verification</span>
+              <ArrowRight className="w-4 h-4" />
             </Link>
             <button
               onClick={handleRetrain}
-              className="px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-xl transition-colors border border-gray-700"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-xs glass-pill text-slate-300 hover:text-white hover:bg-white/10 border border-white/10 transition-all"
             >
-              🔄 Retrain
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Retrain Architecture</span>
             </button>
           </div>
-        </Card>
+        </div>
       </div>
     )
   }
@@ -540,38 +554,38 @@ export default function Train() {
   // ── RUNNING ───────────────────────────────────────────────────────────────
   if (status === 'running') {
     return (
-      <div className="max-w-2xl mx-auto py-8 space-y-6">
-        <div className="flex items-center gap-3">
-          <Spinner />
-          <h1 className="text-2xl font-extrabold text-white">Training in Progress…</h1>
+      <div className="max-w-3xl mx-auto py-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-300">
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-white tracking-tight">Neural Training In Progress</h1>
+              <p className="text-xs text-slate-400">Optimizing binary cross-entropy on twin feature vectors</p>
+            </div>
+          </div>
+          {etaSeconds != null && (
+            <div className="glass-pill px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-mono text-cyan-300 border border-cyan-500/30">
+              <Clock className="w-3.5 h-3.5 text-cyan-400" />
+              <span>ETA ~{formatETA(etaSeconds)}</span>
+            </div>
+          )}
         </div>
 
-        <Card className="space-y-5">
-          {/* Epoch + ETA */}
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <span className="text-lg font-semibold text-gray-200">
-              Epoch{' '}
-              <span className="text-blue-400 font-bold">{currentEpoch}</span>
-              {totalEpochs > 0 && (
-                <span className="text-gray-500"> / {totalEpochs}</span>
-              )}
+        <div className="rounded-3xl glass-panel p-6 sm:p-8 space-y-6 border border-white/10">
+          <div className="flex items-center justify-between text-xs font-mono">
+            <span className="text-slate-300">
+              Epoch <span className="text-cyan-300 font-bold">{currentEpoch}</span>
+              {totalEpochs > 0 && <span className="text-slate-500"> / {totalEpochs}</span>}
             </span>
-            {etaSeconds != null && (
-              <span className="text-sm text-gray-400">
-                ⏱ ~<span className="text-white font-medium">{formatETA(etaSeconds)}</span> remaining
-              </span>
-            )}
+            <span className="text-slate-400">Adam Optimizer (lr=1e-4)</span>
           </div>
 
-          {/* Progress bar */}
           <ProgressBar pct={pct} />
-
-          {/* Metrics */}
           <MetricsTable metrics={metrics} />
-
-          {/* Log */}
           <LogPanel logs={logs} />
-        </Card>
+        </div>
       </div>
     )
   }
@@ -580,24 +594,34 @@ export default function Train() {
   if (status === 'error') {
     return (
       <div className="max-w-2xl mx-auto py-8 space-y-6">
-        <Card className="border-red-900/50 space-y-4">
-          <div className="text-4xl">❌</div>
-          <h1 className="text-2xl font-bold text-red-400">Training Failed</h1>
-          <p className="text-sm text-red-300 font-mono bg-red-950/40 border border-red-900/40 rounded-xl p-3 break-all">
-            {errorMsg || 'An unknown error occurred.'}
+        <div className="rounded-3xl glass-panel p-6 sm:p-8 border border-rose-500/30 space-y-5 bg-rose-950/20">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-400/40 text-rose-300 flex items-center justify-center">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-rose-300">Training Execution Exception</h1>
+              <p className="text-xs text-slate-400">Pipeline encountered a non-recoverable error</p>
+            </div>
+          </div>
+
+          <p className="text-xs text-rose-200 font-mono bg-slate-950/60 border border-rose-500/20 rounded-xl p-3.5 break-all">
+            {errorMsg || 'An unknown error occurred during tensor graph compilation.'}
           </p>
+
           {logs.length > 0 && <LogPanel logs={logs} />}
-          <div className="flex gap-4 flex-wrap pt-1">
+
+          <div className="flex gap-3 pt-1">
             <button
               onClick={handleRetrain}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition-colors shadow-lg"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider text-white bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 transition-all shadow-glow-cyan"
             >
-              🔄 Try Again
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Retry Training</span>
             </button>
           </div>
-        </Card>
+        </div>
 
-        {/* Dataset Instructions */}
         <DatasetInstructionCard
           datasetReady={datasetReady}
           onRefresh={refreshStatus}
@@ -609,70 +633,57 @@ export default function Train() {
 
   // ── IDLE (default) ────────────────────────────────────────────────────────
   return (
-    <div className="max-w-2xl mx-auto py-8 space-y-6">
-      {/* Header */}
+    <div className="max-w-3xl mx-auto py-4 space-y-6">
       <div>
-        <h1 className="text-3xl font-extrabold text-white mb-2">🧠 Train Your Model</h1>
-        <p className="text-gray-400">
-          Train the Siamese Network on your registered face images. This only needs to be done once.
+        <div className="inline-flex items-center gap-2 text-xs font-mono text-cyan-400 glass-pill px-3 py-1 rounded-full mb-2">
+          <BrainCircuit className="w-3.5 h-3.5" /> NEURAL CALIBRATION LABORATORY
+        </div>
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+          Train Siamese Neural Network
+        </h1>
+        <p className="text-sm text-slate-300 mt-1">
+          Train the dual convolutional subnets on negative LFW pairs and your positive face vectors.
         </p>
       </div>
 
-      {/* Prerequisites */}
-      <Card className="border-yellow-900/40 bg-yellow-950/10">
-        <div className="flex items-start gap-3">
-          <span className="text-2xl mt-0.5">⚠️</span>
-          <div>
-            <h2 className="font-semibold text-yellow-300 mb-2">Prerequisites</h2>
-            <ul className="space-y-1.5 text-sm text-yellow-200/70 list-none">
-              <li>
-                • Register at least 5 face images in the{' '}
-                <Link to="/register" className="text-yellow-300 underline hover:text-yellow-100 font-medium">
-                  Register
-                </Link>{' '}
-                page
-              </li>
-              <li>• Upload the LFW dataset .zip file below (or download it from Kaggle)</li>
-              <li>• Training takes ~5–15 minutes on CPU</li>
-              <li>• Keep this tab open during training</li>
-            </ul>
-          </div>
-        </div>
-      </Card>
-
-      {/* Dataset Instructions */}
+      {/* Dataset Uploader */}
       <DatasetInstructionCard
         datasetReady={datasetReady}
         onRefresh={refreshStatus}
         checking={checkingDataset}
       />
 
-      {/* CTA */}
-      <Card className="text-center space-y-4">
-        <p className="text-gray-400 text-sm">
-          Click the button below to begin training. The model will be automatically loaded once
-          complete.
+      {/* Initiation Control Card */}
+      <div className="rounded-3xl glass-panel p-6 sm:p-8 text-center space-y-4 border border-white/10">
+        <p className="text-xs text-slate-300 max-w-md mx-auto">
+          Training runs in background with live epoch loss, precision, and accuracy telemetry. Requires ~5 minutes on CPU.
         </p>
+
         <button
           onClick={handleStart}
           disabled={starting}
-          className="px-8 py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors shadow-lg text-lg flex items-center gap-2 mx-auto"
+          className="px-8 py-3.5 rounded-2xl font-bold text-xs uppercase tracking-wider text-white bg-gradient-to-r from-cyan-500 via-sky-600 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed shadow-glow-cyan transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] inline-flex items-center gap-2.5 mx-auto"
         >
           {starting ? (
             <>
-              <Spinner /> Starting…
+              <RefreshCw className="w-4 h-4 animate-spin text-cyan-200" />
+              <span>Compiling Tensor Graph…</span>
             </>
           ) : (
-            '🚀 Start Training'
+            <>
+              <BrainCircuit className="w-4 h-4 text-cyan-200" />
+              <span>Initiate Siamese Training</span>
+            </>
           )}
         </button>
-        <p className="text-xs text-gray-600">
-          Already have a trained model?{' '}
-          <Link to="/verify" className="text-blue-400 hover:underline">
-            Go to Verify
+
+        <div className="pt-2">
+          <Link to="/verify" className="text-xs text-cyan-400/80 hover:text-cyan-300 inline-flex items-center gap-1 font-mono">
+            <span>Skip to Verification if model exists</span>
+            <ArrowRight className="w-3 h-3" />
           </Link>
-        </p>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }
