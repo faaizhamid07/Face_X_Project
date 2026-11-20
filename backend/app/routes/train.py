@@ -20,15 +20,17 @@ import json
 import logging
 import queue
 import random
+import shutil
 import threading
 import time
+import zipfile
 from typing import Generator
 
 import numpy as np
-from fastapi import APIRouter
+from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import StreamingResponse
 
-from app.config import LFW_DIR, MODEL_PATH, REFERENCE_DIR
+from app.config import LFW_DIR, MODEL_PATH, REFERENCE_DIR, PROJECT_ROOT
 from app.services import model as model_service
 
 logger = logging.getLogger(__name__)
@@ -125,13 +127,59 @@ def _augment(img: np.ndarray) -> np.ndarray:
     return aug.astype(np.float32)
 
 
+def _auto_extract_zip_if_present() -> None:
+    """If a zip file is placed in FaceRecognition, auto-extract it."""
+    base_search = os.path.join(PROJECT_ROOT, "FaceRecognition")
+    if not os.path.isdir(base_search):
+        return
+    for item in os.listdir(base_search):
+        if item.lower().endswith(".zip"):
+            zip_path = os.path.join(base_search, item)
+            # Only extract if dataset images are not yet present
+            sample = _collect_lfw_paths(limit=1)
+            if not sample:
+                try:
+                    logger.info("Found dataset zip '%s'. Auto-extracting...", zip_path)
+                    with zipfile.ZipFile(zip_path, "r") as zf:
+                        zf.extractall(base_search)
+                    logger.info("Auto-extraction complete.")
+                except Exception as exc:
+                    logger.warning("Failed to auto-extract %s: %s", zip_path, exc)
+
+
+def _resolve_lfw_dir() -> str:
+    """
+    Find the directory directly containing person subfolders with face images.
+    Recursively scans the FaceRecognition tree so any extraction hierarchy works.
+    """
+    base_search = os.path.join(PROJECT_ROOT, "FaceRecognition")
+    if os.path.isdir(base_search):
+        for root, dirs, _ in os.walk(base_search):
+            if dirs:
+                # Check if subdirs contain images (identifies the directory of person folders)
+                has_person_dirs = False
+                for d in dirs[:10]:
+                    subdir = os.path.join(root, d)
+                    try:
+                        if any(f.lower().endswith((".jpg", ".jpeg", ".png")) for f in os.listdir(subdir)):
+                            has_person_dirs = True
+                            break
+                    except Exception:
+                        pass
+                if has_person_dirs:
+                    return root
+
+    return LFW_DIR
+
+
 def _collect_lfw_paths(limit: int = 5000) -> list[str]:
     """Collect image paths from the LFW dataset tree."""
+    target_dir = _resolve_lfw_dir()
     paths: list[str] = []
-    if not os.path.isdir(LFW_DIR):
-        logger.warning("LFW directory not found: %s", LFW_DIR)
+    if not os.path.isdir(target_dir):
+        logger.warning("LFW directory not found: %s", target_dir)
         return paths
-    for root, _, files in os.walk(LFW_DIR):
+    for root, _, files in os.walk(target_dir):
         for fname in files:
             if fname.lower().endswith((".jpg", ".jpeg", ".png")):
                 paths.append(os.path.join(root, fname))
@@ -142,14 +190,15 @@ def _collect_lfw_paths(limit: int = 5000) -> list[str]:
 
 def _collect_lfw_identity_pairs(target_pairs: int = 100) -> list[tuple[str, str]]:
     """Find pairs of images of the SAME person in LFW."""
+    target_dir = _resolve_lfw_dir()
     pairs: list[tuple[str, str]] = []
-    if not os.path.isdir(LFW_DIR):
+    if not os.path.isdir(target_dir):
         return pairs
     try:
-        entries = os.listdir(LFW_DIR)
+        entries = os.listdir(target_dir)
         random.shuffle(entries)
         for person_dir in entries:
-            full_dir = os.path.join(LFW_DIR, person_dir)
+            full_dir = os.path.join(target_dir, person_dir)
             if not os.path.isdir(full_dir):
                 continue
             images = [
@@ -347,7 +396,8 @@ def _run_training(epochs: int = 15, batch_size: int = 16) -> None:
 
         _push({"type": "log", "message": f"TensorFlow {tf.__version__} initialized."})
 
-        # 2. Build dataset
+        # 2. Check and build dataset
+        _auto_extract_zip_if_present()
         X_anchor, X_pair, y = _build_dataset(epochs)
 
         # 3. Build model
@@ -431,13 +481,67 @@ async def start_training(epochs: int = 15, batch_size: int = 16):
 
 @router.get("/status")
 async def training_status():
-    """Return the current training state, latest progress, and model existence."""
+    """Return the current training state, latest progress, model existence, and dataset availability."""
+    _auto_extract_zip_if_present()
+    target_dir = _resolve_lfw_dir()
+    lfw_sample = _collect_lfw_paths(limit=5)
     with _state_lock:
         return {
             "state": _training_state["state"],
             "progress": _training_state["progress"],
             "model_exists": os.path.exists(MODEL_PATH),
+            "dataset_ready": len(lfw_sample) > 0,
+            "dataset_dir": LFW_DIR,
+            "relative_dir": "FaceRecognition/archive/lfw-deepfunneled/lfw-deepfunneled",
+            "detected_dataset_dir": target_dir if len(lfw_sample) > 0 else None,
         }
+
+
+@router.post("/upload-dataset")
+async def upload_dataset(file: UploadFile = File(...)):
+    """
+    Accepts an uploaded LFW dataset zip file, extracts it directly into FaceRecognition/,
+    and scans the extracted images.
+    """
+    if not (file.filename and file.filename.lower().endswith(".zip")):
+        raise HTTPException(
+            status_code=422,
+            detail="Invalid file format. Please upload a .zip archive (e.g. lfw-dataset.zip).",
+        )
+
+    base_dir = os.path.join(PROJECT_ROOT, "FaceRecognition")
+    os.makedirs(base_dir, exist_ok=True)
+    temp_zip = os.path.join(base_dir, f"_temp_{int(time.time())}.zip")
+
+    try:
+        with open(temp_zip, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        # Extract zip contents into FaceRecognition/
+        with zipfile.ZipFile(temp_zip, "r") as zf:
+            zf.extractall(base_dir)
+
+    except Exception as exc:
+        logger.error("Failed to extract uploaded dataset zip: %s", exc)
+        raise HTTPException(status_code=500, detail=f"Failed to extract zip file: {exc}")
+    finally:
+        if os.path.exists(temp_zip):
+            try:
+                os.remove(temp_zip)
+            except Exception:
+                pass
+
+    found_images = _collect_lfw_paths(limit=5000)
+    count = len(found_images)
+    detected_dir = _resolve_lfw_dir()
+
+    return {
+        "success": True,
+        "message": f"Dataset uploaded and extracted successfully! Found {count} images.",
+        "image_count": count,
+        "dataset_ready": count > 0,
+        "detected_dir": detected_dir,
+    }
 
 
 @router.get("/stream")

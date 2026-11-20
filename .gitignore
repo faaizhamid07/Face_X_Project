@@ -19,7 +19,12 @@ frontend/dist/
 # Jupyter
 .ipynb_checkpoints/
 IMPLEMENTATION_PLAN.md
-/FaceRecognition/
+# FaceRecognition dataset (ignore large dataset images & archives, keep directory)
+/FaceRecognition/**
+!/FaceRecognition/
+!/FaceRecognition/**/
+!/FaceRecognition/**/.gitkeep
+!/FaceRecognition/README.md
 backend/data/models/siamesemodelv2.h5
 backend/.venv
 backend/data/reference_faces/

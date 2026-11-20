@@ -17,6 +17,11 @@ LFW_DIR = os.path.join(
     "lfw-deepfunneled",
 )
 
+# Ensure required directories exist
+os.makedirs(os.path.join(DATA_DIR, "models"), exist_ok=True)
+os.makedirs(REFERENCE_DIR, exist_ok=True)
+os.makedirs(LFW_DIR, exist_ok=True)
+
 # ── Verification thresholds ───────────────────────────────────────────────────
 # Minimum similarity score (0-1) for a single image pair to count as a match
 DETECTION_THRESHOLD = 0.5

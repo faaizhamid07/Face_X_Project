@@ -42,3 +42,19 @@ export async function getTrainingStatus() {
   const { data } = await api.get('/train/status')
   return data
 }
+
+/** Upload and extract LFW dataset zip file */
+export async function uploadDataset(file, onProgress) {
+  const form = new FormData()
+  form.append('file', file)
+  const { data } = await api.post('/train/upload-dataset', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress: (progressEvent) => {
+      if (onProgress && progressEvent.total) {
+        const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+        onProgress(percent)
+      }
+    },
+  })
+  return data
+}

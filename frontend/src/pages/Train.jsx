@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { startTraining, getTrainingStatus } from '../services/api'
+import { startTraining, getTrainingStatus, uploadDataset } from '../services/api'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -95,6 +95,210 @@ function LogPanel({ logs }) {
   )
 }
 
+function DatasetInstructionCard({ datasetReady, onRefresh, checking }) {
+  const [selectedFile, setSelectedFile] = useState(null)
+  const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadStatus, setUploadStatus] = useState(null) // { type: 'success' | 'error', message: string }
+  const fileInputRef = useRef(null)
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.name.toLowerCase().endsWith('.zip')) {
+      setUploadStatus({ type: 'error', message: 'Please select a valid .zip file.' })
+      return
+    }
+    setSelectedFile(file)
+    setUploadStatus(null)
+  }
+
+  const handleUpload = async () => {
+    if (!selectedFile) return
+    setUploading(true)
+    setUploadProgress(0)
+    setUploadStatus(null)
+    try {
+      const res = await uploadDataset(selectedFile, (pct) => {
+        setUploadProgress(pct)
+      })
+      setUploadStatus({
+        type: 'success',
+        message: res.message || 'Dataset uploaded and extracted successfully!',
+      })
+      setSelectedFile(null)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      if (onRefresh) onRefresh()
+    } catch (err) {
+      setUploadStatus({
+        type: 'error',
+        message:
+          err?.response?.data?.detail ||
+          err?.response?.data?.message ||
+          err?.message ||
+          'Failed to upload dataset zip file.',
+      })
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const formatFileSize = (bytes) => {
+    if (!bytes) return '0 B'
+    const mb = bytes / (1024 * 1024)
+    if (mb >= 1) return `${mb.toFixed(1)} MB`
+    return `${(bytes / 1024).toFixed(1)} KB`
+  }
+
+  return (
+    <Card className="border-blue-900/50 bg-blue-950/20 space-y-4">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2.5">
+          <span className="text-2xl">📦</span>
+          <div>
+            <h2 className="font-semibold text-blue-300 text-base">LFW Training Dataset</h2>
+            <p className="text-xs text-gray-400">Required background face dataset for Siamese network training</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {datasetReady != null && (
+            <span
+              className={`text-xs px-2.5 py-1 rounded-full font-medium border ${
+                datasetReady
+                  ? 'bg-green-950/70 text-green-400 border-green-800'
+                  : 'bg-yellow-950/70 text-yellow-300 border-yellow-800'
+              }`}
+            >
+              {datasetReady ? '✓ Dataset Detected' : '⚠️ Dataset Missing'}
+            </span>
+          )}
+          {onRefresh && (
+            <button
+              type="button"
+              onClick={onRefresh}
+              disabled={checking}
+              className="text-xs px-2.5 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition-colors"
+              title="Check dataset directory"
+            >
+              {checking ? 'Checking…' : '🔄 Check'}
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="text-sm text-gray-300 space-y-4">
+        <p>
+          The Siamese Neural Network requires the <strong>Labeled Faces in the Wild (LFW)</strong> dataset. You can download the zip file from Kaggle and upload it directly below:
+        </p>
+
+        <div>
+          <a
+            href="https://www.kaggle.com/datasets/jessicali9530/lfw-dataset?resource=download"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600/90 hover:bg-blue-600 text-white text-sm font-semibold rounded-xl transition-colors shadow group"
+          >
+            <span>⬇️</span>
+            <span>Download LFW Dataset (.zip) from Kaggle</span>
+            <span className="text-xs text-blue-200 group-hover:translate-x-0.5 transition-transform">↗</span>
+          </a>
+        </div>
+
+        {/* Upload ZIP File Area */}
+        <div className="border border-dashed border-gray-700 hover:border-blue-500/70 bg-gray-950/60 rounded-xl p-4 transition-colors">
+          <input
+            type="file"
+            accept=".zip"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            className="hidden"
+            id="dataset-zip-upload"
+          />
+
+          {!selectedFile && !uploading && (
+            <label
+              htmlFor="dataset-zip-upload"
+              className="flex flex-col items-center justify-center cursor-pointer py-3 space-y-2 text-center"
+            >
+              <div className="text-3xl">📁</div>
+              <div className="text-sm font-medium text-blue-300">
+                Click to browse or drop your dataset <span className="font-mono text-xs">.zip</span> file here
+              </div>
+              <div className="text-xs text-gray-500">Supports Kaggle lfw-dataset.zip</div>
+            </label>
+          )}
+
+          {selectedFile && !uploading && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between bg-gray-900 border border-gray-800 rounded-lg p-3">
+                <div className="flex items-center gap-2.5 overflow-hidden">
+                  <span className="text-xl">🗜️</span>
+                  <div className="truncate">
+                    <div className="text-xs font-medium text-white truncate">{selectedFile.name}</div>
+                    <div className="text-[11px] text-gray-500">{formatFileSize(selectedFile.size)}</div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedFile(null)
+                    if (fileInputRef.current) fileInputRef.current.value = ''
+                  }}
+                  className="text-gray-400 hover:text-red-400 text-xs px-2 py-1 rounded transition-colors"
+                >
+                  ✕ Remove
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleUpload}
+                className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm rounded-xl transition-colors shadow flex items-center justify-center gap-2"
+              >
+                <span>🚀</span>
+                <span>Upload & Extract Dataset</span>
+              </button>
+            </div>
+          )}
+
+          {uploading && (
+            <div className="py-3 space-y-2 text-center">
+              <div className="flex items-center justify-center gap-2 text-sm text-blue-300 font-medium">
+                <Spinner />
+                <span>
+                  {uploadProgress < 100
+                    ? `Uploading dataset (${uploadProgress}%)…`
+                    : 'Extracting dataset into project…'}
+                </span>
+              </div>
+              <div className="w-full bg-gray-800 rounded-full h-2 overflow-hidden border border-gray-700">
+                <div
+                  className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+              <p className="text-[11px] text-gray-500">Please keep this window open while processing.</p>
+            </div>
+          )}
+
+          {uploadStatus && (
+            <div
+              className={`mt-3 p-3 rounded-xl text-xs flex items-center gap-2 ${
+                uploadStatus.type === 'success'
+                  ? 'bg-green-950/60 border border-green-800 text-green-300'
+                  : 'bg-red-950/60 border border-red-800 text-red-300'
+              }`}
+            >
+              <span>{uploadStatus.type === 'success' ? '✅' : '❌'}</span>
+              <span>{uploadStatus.message}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </Card>
+  )
+}
+
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 const SSE_URL = '/api/train/stream'
@@ -109,6 +313,9 @@ export default function Train() {
   const [etaSeconds, setEtaSeconds] = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
   const [starting, setStarting] = useState(false)
+  const [datasetReady, setDatasetReady] = useState(null)
+  const [datasetDir, setDatasetDir] = useState('')
+  const [checkingDataset, setCheckingDataset] = useState(false)
 
   const esRef = useRef(null)
 
@@ -222,27 +429,35 @@ export default function Train() {
     })
   }, [addLog])
 
+  // ── Refresh training & dataset status ────────────────────────────────────
+  const refreshStatus = useCallback(async () => {
+    setCheckingDataset(true)
+    try {
+      const data = await getTrainingStatus()
+      if (data.dataset_ready != null) setDatasetReady(data.dataset_ready)
+      if (data.dataset_dir) setDatasetDir(data.dataset_dir)
+      if (data.state === 'complete' || (data.model_exists && data.state !== 'running')) {
+        setStatus('complete')
+      } else if (data.state === 'running') {
+        setStatus('running')
+        addLog('Reconnecting to running training session…')
+        connectSSE()
+      }
+    } catch {
+      // Backend not reachable — stay idle
+    } finally {
+      setCheckingDataset(false)
+    }
+  }, [addLog, connectSSE])
+
   // ── On mount: check status ───────────────────────────────────────────────
   useEffect(() => {
-    getTrainingStatus()
-      .then((data) => {
-        if (data.state === 'complete' || (data.model_exists && data.state !== 'running')) {
-          setStatus('complete')
-        } else if (data.state === 'running') {
-          setStatus('running')
-          addLog('Reconnecting to running training session…')
-          connectSSE()
-        }
-      })
-      .catch(() => {
-        // Backend not reachable — stay idle
-      })
-
+    refreshStatus()
     return () => {
       esRef.current?.close()
       esRef.current = null
     }
-  }, [addLog, connectSSE])
+  }, [refreshStatus])
 
   // ── Start training ───────────────────────────────────────────────────────
   async function handleStart() {
@@ -282,6 +497,7 @@ export default function Train() {
     setLogs([])
     setEtaSeconds(null)
     setErrorMsg('')
+    refreshStatus()
   }
 
   // ── Derived ──────────────────────────────────────────────────────────────
@@ -367,7 +583,7 @@ export default function Train() {
         <Card className="border-red-900/50 space-y-4">
           <div className="text-4xl">❌</div>
           <h1 className="text-2xl font-bold text-red-400">Training Failed</h1>
-          <p className="text-sm text-red-300 font-mono bg-red-950/40 border border-red-900/40 rounded-xl p-3">
+          <p className="text-sm text-red-300 font-mono bg-red-950/40 border border-red-900/40 rounded-xl p-3 break-all">
             {errorMsg || 'An unknown error occurred.'}
           </p>
           {logs.length > 0 && <LogPanel logs={logs} />}
@@ -380,6 +596,13 @@ export default function Train() {
             </button>
           </div>
         </Card>
+
+        {/* Dataset Instructions */}
+        <DatasetInstructionCard
+          datasetReady={datasetReady}
+          onRefresh={refreshStatus}
+          checking={checkingDataset}
+        />
       </div>
     )
   }
@@ -401,14 +624,28 @@ export default function Train() {
           <span className="text-2xl mt-0.5">⚠️</span>
           <div>
             <h2 className="font-semibold text-yellow-300 mb-2">Prerequisites</h2>
-            <ul className="space-y-1 text-sm text-yellow-200/70 list-none">
-              <li>• Register at least 5 face images first</li>
+            <ul className="space-y-1.5 text-sm text-yellow-200/70 list-none">
+              <li>
+                • Register at least 5 face images in the{' '}
+                <Link to="/register" className="text-yellow-300 underline hover:text-yellow-100 font-medium">
+                  Register
+                </Link>{' '}
+                page
+              </li>
+              <li>• Upload the LFW dataset .zip file below (or download it from Kaggle)</li>
               <li>• Training takes ~5–15 minutes on CPU</li>
               <li>• Keep this tab open during training</li>
             </ul>
           </div>
         </div>
       </Card>
+
+      {/* Dataset Instructions */}
+      <DatasetInstructionCard
+        datasetReady={datasetReady}
+        onRefresh={refreshStatus}
+        checking={checkingDataset}
+      />
 
       {/* CTA */}
       <Card className="text-center space-y-4">

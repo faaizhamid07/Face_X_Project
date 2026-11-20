@@ -78,15 +78,17 @@ npm install
 
 ## 2) Download the Dataset (LFW)
 
-Training expects the LFW images here (exact nested path):
+Download the LFW (Labeled Faces in the Wild) dataset from [Kaggle](https://www.kaggle.com/datasets/jessicali9530/lfw-dataset?resource=download).
 
-```text
-FaceRecognition/archive/lfw-deepfunneled/lfw-deepfunneled/
-```
+You have two convenient options to load it:
+1. **Direct Web Upload (Easiest)**: Start the app, open the **Train** tab, and upload the downloaded `.zip` file directly. The app will automatically extract and detect it.
+2. **Manual Placement**: Extract the archive into:
+   ```text
+   FaceRecognition/archive/lfw-deepfunneled/lfw-deepfunneled/
+   ```
+   Or place the `.zip` file in `FaceRecognition/` and the backend will automatically extract it on first run.
 
-Each person folder should be inside the final `lfw-deepfunneled` directory.
-
-Expected example:
+Expected structure:
 
 ```text
 Face_X_Project/
@@ -98,10 +100,6 @@ Face_X_Project/
 					Aaron_Peirsol/
 					...
 ```
-
-If you are downloading from the official LFW source or Kaggle, unpack the archive and move folders until the structure matches above.
-
-Why this matters: backend config resolves dataset path from `backend/app/config.py` using `LFW_DIR`, and training fails if the folder does not exist.
 
 ## 3) Run the Backend API
 
