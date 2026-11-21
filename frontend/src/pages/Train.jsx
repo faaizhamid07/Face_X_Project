@@ -65,7 +65,7 @@ function ProgressBar({ pct }) {
       </div>
       <div className="relative w-full h-2.5 bg-slate-950 rounded-full overflow-hidden border border-white/10">
         <div
-          className="h-full bg-blue-600 rounded-full transition-all duration-300 ease-out"
+          className="h-full bg-[var(--color-accent-primary)] rounded-full transition-all duration-300 ease-out"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -175,8 +175,8 @@ function DatasetInstructionCard({ datasetReady, onRefresh, checking }) {
             <span
               className={`text-xs px-3 py-1 rounded-full font-mono font-medium border flex items-center gap-1.5 ${
                 datasetReady
-                  ? 'bg-emerald-950/50 text-emerald-300 border-emerald-500/40'
-                  : 'bg-amber-950/50 text-amber-300 border-amber-500/40'
+                  ? 'bg-[var(--color-bg-glass)] text-[var(--color-accent-primary)] border-[var(--color-border-accent)]'
+                  : 'bg-[var(--color-bg-glass)] text-[var(--color-accent-alert)] border-[var(--color-border-accent)]'
               }`}
             >
               <span className={`w-1.5 h-1.5 rounded-full ${datasetReady ? 'bg-emerald-400' : 'bg-amber-400'}`} />
@@ -277,7 +277,7 @@ function DatasetInstructionCard({ datasetReady, onRefresh, checking }) {
           {uploading && (
             <div className="py-4 space-y-3 text-center">
               <div className="flex items-center justify-center gap-2 text-xs font-mono text-slate-200 font-semibold">
-                <RefreshCw className="w-4 h-4 animate-spin text-blue-400" />
+                <RefreshCw className="w-4 h-4 animate-spin text-[var(--color-accent-primary)]" />
                 <span>
                   {uploadProgress < 100
                     ? `Streaming Archive (${uploadProgress}%)…`
@@ -286,11 +286,11 @@ function DatasetInstructionCard({ datasetReady, onRefresh, checking }) {
               </div>
               <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-white/10">
                 <div
-                  className="bg-blue-500 h-full rounded-full transition-all duration-300"
+                  className="bg-[var(--color-accent-primary)] h-full rounded-full transition-all duration-300"
                   style={{ width: `${uploadProgress}%` }}
                 />
               </div>
-              <p className="text-xs text-slate-400">Decompressing multi-thousand face images into local storage.</p>
+              <span>Decompressing multi-thousand face images into local storage.</span>
             </div>
           )}
 
@@ -298,14 +298,14 @@ function DatasetInstructionCard({ datasetReady, onRefresh, checking }) {
             <div
               className={`mt-3 p-3 rounded-xl text-xs font-medium flex items-center gap-2.5 ${
                 uploadStatus.type === 'success'
-                  ? 'bg-emerald-950/40 border border-emerald-500/30 text-emerald-200'
-                  : 'bg-rose-950/40 border border-rose-500/30 text-rose-200'
+                  ? 'bg-[var(--color-bg-glass)] border border-[var(--color-border-accent)] text-[var(--color-accent-primary)]'
+                  : 'bg-[var(--color-bg-glass)] border border-[var(--color-border-accent)] text-[var(--color-accent-alert)]'
               }`}
             >
               {uploadStatus.type === 'success' ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-[var(--color-accent-primary)] shrink-0" />
               ) : (
-                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                <AlertTriangle className="w-4 h-4 text-[var(--color-accent-alert)] shrink-0" />
               )}
               <span>{uploadStatus.message}</span>
             </div>
@@ -529,7 +529,7 @@ export default function Train() {
           <div className="flex gap-3 pt-2">
             <Link
               to="/verify"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-xs uppercase tracking-wider text-white bg-blue-600 hover:bg-blue-500 shadow-md transition-all"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-xs uppercase tracking-wider text-white bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary)]/90 shadow-md transition-all"
             >
               <ShieldCheck className="w-4 h-4" />
               <span>Launch Verification</span>
@@ -591,7 +591,7 @@ export default function Train() {
   if (status === 'error') {
     return (
       <div className="max-w-2xl mx-auto py-8 space-y-6">
-        <div className="rounded-3xl glass-panel p-6 sm:p-8 border border-rose-500/30 space-y-5 bg-rose-950/20 shadow-elevation-md">
+        <div className="rounded-3xl glass-panel p-6 sm:p-8 border border-[var(--color-border-accent)] space-y-5 bg-[var(--color-bg-glass)] shadow-elevation-md">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-400/40 text-rose-300 flex items-center justify-center">
               <AlertTriangle className="w-5 h-5" />
@@ -602,7 +602,7 @@ export default function Train() {
             </div>
           </div>
 
-          <p className="text-xs text-rose-200 font-mono bg-slate-950/60 border border-rose-500/20 rounded-xl p-3.5 break-all">
+          <p className="text-xs text-slate-200 font-mono bg-[var(--color-bg-glass)] border border-[var(--color-border-accent)] rounded-xl p-3.5 break-all">
             {errorMsg || 'An unknown error occurred during tensor graph compilation.'}
           </p>
 
@@ -611,7 +611,7 @@ export default function Train() {
           <div className="flex gap-3 pt-1">
             <button
               onClick={handleRetrain}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold uppercase tracking-wider text-white bg-blue-600 hover:bg-blue-500 transition-all shadow-md"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold uppercase tracking-wider text-white bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary)]/90 transition-all shadow-md"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Retry Training</span>
