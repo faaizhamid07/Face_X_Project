@@ -28,3 +28,5 @@ IMPLEMENTATION_PLAN.md
 backend/data/models/siamesemodelv2.h5
 backend/.venv
 backend/data/reference_faces/
+# Logs
+*.log

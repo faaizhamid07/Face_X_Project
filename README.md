@@ -27,7 +27,7 @@ git commit -m "Stop tracking local data and model artifacts"
 ## Prerequisites
 
 1. Windows 10/11, macOS, or Linux (64-bit)
-2. Python 3.11 (64-bit) recommended
+2. Python 3.12 (64-bit) required for the supported backend setup
 3. Node.js 18+ and npm
 
 Check versions:
@@ -48,7 +48,7 @@ From the repository root:
 
 ```powershell
 cd backend
-py -3.11 -m venv .venv
+py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install --upgrade pip
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
@@ -59,7 +59,7 @@ Using the virtual environment's Python directly avoids PowerShell execution-poli
 
 ```bash
 cd backend
-python3.11 -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
@@ -103,7 +103,7 @@ Face_X_Project/
 
 ## 3) Quick Start: Run Everything with 1 Command
 
-Once dependencies are installed, you can launch both backend and frontend simultaneously:
+From the repository root, run the command below. The launcher creates a root-level Python 3.12 virtual environment and installs backend/frontend dependencies when missing:
 
 ```bash
 python run.py
@@ -112,8 +112,8 @@ python run.py
 *On Windows, you can also simply double-click `run.bat`.*
 
 This will:
-- Automatically use the backend virtual environment.
-- Start both FastAPI (`http://localhost:8000`) and the React UI (`http://localhost:5173`).
+- Automatically create/reuse the root .venv with Python 3.12 and install backend requirements as needed.
+- Wait for the backend health check before starting the frontend.\n- Start both FastAPI (`http://localhost:8000`) and the React UI (`http://localhost:5173`).
 - Stream logs from both services with colored prefixes.
 - Automatically open your browser to `http://localhost:5173`.
 - Press `Ctrl+C` in the terminal to cleanly terminate both servers at once.
@@ -244,11 +244,11 @@ Normal before first training. Verification can fall back to `face_recognition` o
 3. CORS or frontend cannot reach backend
 Ensure backend is running on port `8000` and frontend on `5173`.
 
-4. Windows: `py -3.11` is not recognized
-Install 64-bit Python 3.11 and enable the Python launcher, or replace `py -3.11` with the path to your Python 3.11 executable.
+4. Windows: `py -3.12` is not recognized
+Install 64-bit Python 3.12 and enable the Python launcher, or replace `py -3.12` with the path to your Python 3.11 executable.
 
 5. TensorFlow installation fails
-Use Python 3.11 64-bit. On Windows, install the Microsoft Visual C++ Redistributable if TensorFlow reports missing runtime DLLs. For Windows GPU acceleration use WSL2 rather than native Windows.
+Use Python 3.12 64-bit. On Windows, install the Microsoft Visual C++ Redistributable if TensorFlow reports missing runtime DLLs. For Windows GPU acceleration use WSL2 rather than native Windows.
 
 6. Browser camera unavailable
 Allow webcam access in the browser. Use `localhost` for development (or HTTPS for remote deployment).
@@ -257,3 +257,16 @@ Allow webcam access in the browser. Use `localhost` for development (or HTTPS fo
 
 Architecture and implementation details are documented in `IMPLEMENTATION_PLAN.md`.
 
+
+
+## Setup notes and verification
+
+- The one-command launcher uses `<repository>/.venv` (Python 3.12). The independent backend instructions use `backend/.venv`. Both are valid and intentionally separate; do not commit either environment.
+- Prerequisites: Python 3.12, Node.js 18+ and npm. On Windows, the Python launcher `py -3.12` must work unless `python` already invokes Python 3.12.
+- `python run.py` creates the root virtual environment, installs requirements when needed, installs frontend dependencies with `npm ci` when absent, waits for `/health`, then starts Vite. Use `python run.py --no-browser` to avoid opening a browser.
+- To test a fresh installation, clone into a **new directory**, run `python run.py`, and confirm `http://localhost:8000/health` and `http://localhost:5173`. Test the independent backend and frontend commands in separate terminals as well.
+- A successful health check only confirms API startup; it does not mean a trained verification model is present. Trained models, reference face images, and the LFW dataset are intentionally excluded from Git. Upload the LFW ZIP in the Train tab or follow the dataset instructions above, register reference images, and train before using Siamese verification.
+- Optional `face_recognition` fallback is not installed automatically. It may require native compilation tools and is not guaranteed on all operating systems.
+- macOS/Linux users need `python3.12` available on PATH. TensorFlow wheels and native dependencies vary by OS and CPU architecture; support must be validated on the target machine.
+- If a backend package fails to install, use the Python 3.12 environment and inspect the pip error. Do not run the backend using Python 3.14.
+- The Vite dev server and FastAPI development server are intended for **local development**, not public production deployment.
