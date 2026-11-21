@@ -15,7 +15,7 @@ export default function WebcamCapture({
 }) {
   return (
     <div className="flex flex-col items-center gap-3 w-full max-w-[420px]">
-      <div className="relative w-full aspect-square rounded-3xl overflow-hidden bg-slate-950 border border-white/10 shadow-elevation-md">
+      <div className="relative w-full aspect-square rounded-3xl overflow-hidden bg-[var(--color-bg-glass)] border border-[var(--color-border-accent)] shadow-elevation-md">
         <ReactWebcam
           ref={webcamRef}
           audio={false}
@@ -44,13 +44,13 @@ export default function WebcamCapture({
 
             {/* Scanning Line */}
             {scanning && (
-              <div className="absolute inset-x-0 top-0 h-0.5 bg-blue-400 opacity-80 animate-scan" />
+              <div className="absolute inset-x-0 top-0 h-0.5 opacity-80 animate-scan" style={{ background: "var(--color-accent-primary)" }} />
             )}
 
             {/* Top HUD Feed Tag */}
             <div className="absolute top-3 inset-x-4 flex items-center justify-between text-xs font-mono font-medium text-slate-200">
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/90 border border-white/10">
-                <Radio className="w-3.5 h-3.5 text-emerald-400" />
+                <Radio className="w-3.5 h-3.5" style={{ color: "var(--color-accent-primary)" }} />
                 <span>LIVE FEED</span>
               </div>
               <div className="px-2.5 py-1 rounded-full bg-slate-900/90 border border-white/10 text-slate-300">
@@ -61,7 +61,7 @@ export default function WebcamCapture({
             {/* Bottom HUD Align Message */}
             <div className="absolute bottom-3 inset-x-0 flex justify-center text-xs font-mono text-slate-200">
               <div className="px-3 py-1 rounded-full bg-slate-900/90 border border-white/10 flex items-center gap-2">
-                <Scan className="w-3.5 h-3.5 text-blue-400" />
+                <Scan className="w-3.5 h-3.5" style={{ color: "var(--color-accent-primary)" }} />
                 <span>ALIGN FACE WITHIN FRAME</span>
               </div>
             </div>

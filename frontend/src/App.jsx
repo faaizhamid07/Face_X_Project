@@ -44,7 +44,7 @@ function Navbar() {
       <nav className="max-w-6xl mx-auto rounded-2xl glass-panel px-4 py-3 flex items-center justify-between border border-white/10 shadow-elevation-md">
         {/* Brand / Logo */}
         <Link to="/" className="flex items-center gap-3 group">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 text-blue-400 shadow-sm group-hover:border-slate-600 transition-colors">
+          <div className="flex items-center justify-center w-10 h-10 rounded-xl glass-panel-strong var(--color-accent-primary) shadow-sm group-hover:border-emerald-500/40 transition-colors">
             <ScanFace className="w-5 h-5" />
           </div>
           <div className="flex flex-col text-left">
@@ -52,7 +52,7 @@ function Navbar() {
               <span className="text-lg font-bold text-white tracking-tight">
                 Face‑X
               </span>
-              <span className="text-xs uppercase font-mono px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 font-semibold">
+              <span className="text-xs uppercase font-mono px-2 py-0.5 rounded glass-pill text-slate-300 font-semibold">
                 v2.0
               </span>
             </div>
@@ -61,7 +61,7 @@ function Navbar() {
         </Link>
 
         {/* Navigation Items */}
-        <div className="flex items-center gap-1 bg-slate-900/60 p-1.5 rounded-xl border border-white/5 backdrop-blur-md">
+        <div className="flex items-center gap-1 bg-[var(--color-bg-glass)] p-1.5 rounded-xl border border-[var(--color-border-accent)] backdrop-blur-md">
           {navItems.map((item) => {
             const Icon = item.icon
             const isActive = pathname === item.to
@@ -75,10 +75,10 @@ function Navbar() {
                     : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-blue-400' : 'text-slate-400'}`} />
+                <Icon className={`w-3.5 h-3.5 ${isActive ? 'var(--color-accent-primary)' : 'text-slate-400'}`} />
                 <span>{item.label}</span>
                 {item.badge && (
-                  <span className="px-2 py-0.5 rounded text-xs font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  <span className="px-2 py-0.5 rounded text-xs font-mono font-bold badge-pending">
                     {item.badge}
                   </span>
                 )}
@@ -93,12 +93,12 @@ function Navbar() {
             <span
               className={`w-2 h-2 rounded-full ${
                 modelStatus === 'ready'
-                  ? 'bg-emerald-400'
+                  ? 'var(--color-accent-primary) animate-pulse-subtle'
                   : modelStatus === 'training'
-                  ? 'bg-amber-400 animate-pulse'
+                  ? 'var(--color-accent-warning) animate-pulse-subtle'
                   : modelStatus === 'offline'
-                  ? 'bg-rose-500'
-                  : 'bg-slate-400'
+                  ? 'var(--color-accent-alert)'
+                  : 'var(--color-fg-muted)'
               }`}
             />
             <span className="text-slate-300 font-medium">
@@ -119,12 +119,12 @@ function Navbar() {
 
 export default function App() {
   return (
-    <div className="min-h-screen relative flex flex-col bg-[#0b0f17]">
+    <div className="min-h-screen relative flex flex-col" style={{ backgroundColor: 'var(--color-bg-primary)' }}>
       {/* Intentional, neutral architectural canvas */}
-      <div 
-        className="fixed inset-0 pointer-events-none -z-10" 
+      <div
+        className="fixed inset-0 pointer-events-none -z-10"
         style={{
-          background: 'radial-gradient(ellipse 90% 60% at 50% 0%, rgba(30, 41, 59, 0.35) 0%, rgba(11, 15, 23, 1) 85%)'
+          background: 'radial-gradient(ellipse 80% 60% at 50% 20%, rgba(5,150,105,0.08) 0%, transparent 70%)'
         }}
       />
 

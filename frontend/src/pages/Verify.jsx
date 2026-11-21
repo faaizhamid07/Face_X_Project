@@ -1,12 +1,12 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
-import { 
-  ShieldCheck, 
-  ShieldAlert, 
-  ScanFace, 
-  Activity, 
-  RotateCw, 
-  AlertTriangle, 
-  Clock, 
+import {
+  ShieldCheck,
+  ShieldAlert,
+  ScanFace,
+  Activity,
+  RotateCw,
+  AlertTriangle,
+  Clock,
   CheckCircle2,
   XCircle
 } from 'lucide-react'
@@ -45,10 +45,10 @@ export default function Verify() {
       const latency = Math.round(performance.now() - startTime)
       setResult(data)
       setHistory(prev => [
-        { 
-          ...data, 
-          latency, 
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) 
+        {
+          ...data,
+          latency,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: 'digit' })
         },
         ...prev.slice(0, 4),
       ])
@@ -68,13 +68,16 @@ export default function Verify() {
     return () => clearInterval(intervalRef.current)
   }, [autoVerify, runVerify])
 
+  const toggleClass = autoVerify ? 'bg-[var(--color-accent-primary)] border-[var(--color-accent-primary)]' : 'bg-[var(--color-bg-elevated)] border-[var(--color-border)]'
+  const thumbTranslate = autoVerify ? 'translate-x-5' : 'translate-x-0'
+
   return (
     <div className="space-y-8 py-2">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="inline-flex items-center gap-2 text-xs font-mono text-slate-300 glass-pill px-3 py-1 rounded-full mb-2">
-            <ScanFace className="w-3.5 h-3.5 text-blue-400" /> LIVE NEURAL INFERENCE
+            <ScanFace className="w-3.5 h-3.5" /> LIVE NEURAL INFERENCE
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight [text-wrap:balance]">
             Biometric Authentication
@@ -86,7 +89,7 @@ export default function Verify() {
 
         {/* Live mode indicator */}
         <div className="glass-panel px-4 py-2.5 rounded-2xl flex items-center gap-3 self-start border border-white/10">
-          <div className={`w-2.5 h-2.5 rounded-full ${autoVerify ? 'bg-blue-400 animate-pulse' : 'bg-emerald-400'}`} />
+          <div className={`w-2.5 h-2.5 rounded-full ${autoVerify ? 'var(--color-bg-primary) animate-pulse' : 'bg-[var(--color-accent-primary)]'}`} />
           <div className="text-xs">
             <span className="text-slate-400 block font-mono uppercase">Sensor Engine</span>
             <span className="font-semibold text-white">{autoVerify ? 'Continuous Polling' : 'On-Demand Auth'}</span>
@@ -96,11 +99,11 @@ export default function Verify() {
 
       {/* Warnings & Alerts */}
       {regStatus && !regStatus.ready && (
-        <div className="px-5 py-3.5 rounded-2xl bg-amber-950/30 border border-amber-500/30 text-amber-200 text-xs font-medium flex items-center gap-3">
-          <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+        <div className="px-5 py-3.5 rounded-2xl bg-[var(--color-bg-glass)] border-[var(--color-border-accent)] text-[var(--color-accent-warning)] text-xs font-medium flex items-center gap-3">
+          <AlertTriangle className="w-4 h-4" />
           <span>
             Only {regStatus.registered} profile frame(s) detected in the local vault. For high-fidelity verification, please{' '}
-            <a href="/register" className="underline font-bold text-amber-300 hover:text-white">
+            <a href="/register" className="underline font-bold var(--color-accent-warning) hover:text-white">
               enroll at least 5 frames here
             </a>.
           </span>
@@ -108,8 +111,8 @@ export default function Verify() {
       )}
 
       {error && (
-        <div className="px-5 py-3.5 rounded-2xl bg-rose-950/40 border border-rose-500/40 text-rose-200 text-xs font-medium flex items-center gap-3">
-          <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
+        <div className="px-5 py-3.5 rounded-2xl bg-[var(--color-bg-glass)] border-[var(--color-border-accent)] text-[var(--color-accent-alert)] text-xs font-medium flex items-center gap-3">
+          <ShieldAlert className="w-4 h-4" />
           <span>Authentication Error: {error}</span>
         </div>
       )}
@@ -118,9 +121,9 @@ export default function Verify() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left: Camera Studio */}
         <div className="lg:col-span-5 flex flex-col items-center gap-4">
-          <WebcamCapture 
-            webcamRef={webcamRef} 
-            label="Optical Biometric Sensor Stream" 
+          <WebcamCapture
+            webcamRef={webcamRef}
+            label="Optical Biometric Sensor Stream"
             scanning={loading || autoVerify}
           />
 
@@ -128,7 +131,8 @@ export default function Verify() {
           <button
             onClick={runVerify}
             disabled={loading || autoVerify}
-            className="w-full max-w-[420px] py-3.5 px-6 rounded-2xl font-semibold text-sm text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed shadow-md transition-all active:scale-[0.99] flex items-center justify-center gap-2.5"
+            className="w-full max-w-[420px] py-3.5 px-6 rounded-2xl font-semibold text-sm text-white btn btn-primary"
+                style={{ boxShadow: 'var(--shadow-accent)' }}
           >
             {loading ? (
               <>
@@ -144,12 +148,12 @@ export default function Verify() {
           </button>
 
           {/* Continuous Auth Switch */}
-          <div 
+          <div
             onClick={() => setAutoVerify(v => !v)}
-            className="w-full max-w-[420px] flex items-center justify-between p-3.5 rounded-2xl glass-panel border border-white/10 cursor-pointer select-none hover:border-slate-600 transition-colors"
+            className="w-full max-w-[420px] flex items-center justify-between p-3.5 rounded-2xl glass-panel border border-white/10 cursor-pointer select-none hover:border-[var(--color-border-strong)] transition-colors"
           >
             <div className="flex items-center gap-2.5 text-xs">
-              <Activity className="w-4 h-4 text-blue-400" />
+              <Activity className="w-4 h-4" />
               <div>
                 <span className="font-semibold text-white block">Continuous Surveillance Mode</span>
                 <span className="text-xs text-slate-400">Trigger neural inference every 2.5s</span>
@@ -157,17 +161,10 @@ export default function Verify() {
             </div>
 
             <div
-              className={`relative w-11 h-6 rounded-full transition-colors duration-200 p-0.5 border ${
-                autoVerify 
-                  ? 'bg-blue-600 border-blue-500' 
-                  : 'bg-slate-800 border-white/10'
-              }`}
-            >
+              className={`relative w-11 h-6 rounded-full transition-colors duration-200 p-0.5 border ${toggleClass}`}>
               <div
-                className={`w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-200 ${
-                  autoVerify ? 'translate-x-5' : 'translate-x-0'
-                }`}
-              />
+                className={`w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-200 ${thumbTranslate}`}>
+              </div>
             </div>
           </div>
         </div>
@@ -179,7 +176,7 @@ export default function Verify() {
             <ResultCard result={result} onReset={() => { setResult(null); setError(null) }} />
           ) : (
             <div className="rounded-3xl glass-panel p-8 border border-white/10 flex items-start gap-4 min-h-[160px] shadow-elevation-md">
-              <ScanFace className="w-8 h-8 text-blue-400 shrink-0 mt-0.5" />
+              <ScanFace className="w-8 h-8 var(--color-accent-primary) shrink-0 mt-0.5" />
               <div>
                 <h2 className="text-base font-bold text-white [text-wrap:balance]">Biometric Sensor Standby</h2>
                 <p className="text-xs text-slate-400 max-w-sm mt-1 [text-wrap:pretty]">
@@ -194,7 +191,7 @@ export default function Verify() {
             <div className="rounded-3xl glass-panel p-6 border border-white/10 space-y-3 shadow-elevation-md">
               <div className="flex items-center justify-between pb-2 border-b border-white/10">
                 <h2 className="text-xs font-mono uppercase tracking-wider text-slate-300 flex items-center gap-2 font-semibold">
-                  <Clock className="w-3.5 h-3.5 text-blue-400" />
+                  <Clock className="w-3.5 h-3.5 var(--color-accent-primary)" />
                   Recent Verification Telemetry
                 </h2>
                 <span className="text-xs font-mono text-slate-500">LAST {history.length} ATTEMPTS</span>
@@ -215,9 +212,9 @@ export default function Verify() {
                     >
                       <div className="flex items-center gap-2.5">
                         {pass ? (
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 var(--color-accent-primary) shrink-0" />
                         ) : (
-                          <XCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                          <XCircle className="w-4 h-4 var(--color-accent-alert) shrink-0" />
                         )}
                         <span className="font-bold">{pass ? 'MATCH CONFIRMED' : 'REJECTED'}</span>
                         <span className="text-xs text-slate-400 font-sans hidden sm:inline">
