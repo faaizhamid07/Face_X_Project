@@ -1,4 +1,14 @@
 import { useRef, useState, useEffect } from 'react'
+import { 
+  Camera, 
+  Save, 
+  Trash2, 
+  X, 
+  CheckCircle2, 
+  AlertCircle, 
+  UserCheck, 
+  Layers
+} from 'lucide-react'
 import WebcamCapture from '../components/WebcamCapture.jsx'
 import { captureRegister, getRegisterStatus, resetRegistration } from '../services/api.js'
 
@@ -6,26 +16,29 @@ const MIN_IMAGES = 5
 
 export default function Register() {
   const webcamRef = useRef(null)
-  const [captures, setCaptures] = useState([])      // local base64 thumbnails
-  const [savedCount, setSavedCount] = useState(0)   // images already on the server
+  const [captures, setCaptures] = useState([])
+  const [savedCount, setSavedCount] = useState(0)
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState(null)
+  const [flash, setFlash] = useState(false)
 
-  // Load current registration status on mount
   useEffect(() => {
     getRegisterStatus()
-      .then(d => setSavedCount(d.registered))
+      .then(d => setSavedCount(d.registered || 0))
       .catch(() => {})
   }, [])
 
   function showToast(msg, type = 'success') {
     setToast({ msg, type })
-    setTimeout(() => setToast(null), 3500)
+    setTimeout(() => setToast(null), 4000)
   }
 
   function handleCapture() {
     const src = webcamRef.current?.getScreenshot()
     if (!src) return
+
+    setFlash(true)
+    setTimeout(() => setFlash(false), 150)
     setCaptures(prev => [...prev, src])
   }
 
@@ -39,7 +52,6 @@ export default function Register() {
     try {
       let lastCount = savedCount
       for (const src of captures) {
-        // Convert base64 data-URL to Blob
         const res = await fetch(src)
         const blob = await res.blob()
         const data = await captureRegister(blob)
@@ -47,23 +59,23 @@ export default function Register() {
       }
       setSavedCount(lastCount)
       setCaptures([])
-      showToast(`✅ ${captures.length} image(s) saved! Total: ${lastCount}`)
+      showToast(`Biometric vault updated! Successfully enrolled ${captures.length} face vector(s). Total: ${lastCount}`)
     } catch (err) {
-      showToast(`❌ Failed to save: ${err.message}`, 'error')
+      showToast(`Enrollment failed: ${err.message}`, 'error')
     } finally {
       setSaving(false)
     }
   }
 
   async function handleReset() {
-    if (!confirm('Clear all registered face images?')) return
+    if (!confirm('Erase all enrolled face vectors from the local biometric vault?')) return
     try {
       await resetRegistration()
       setSavedCount(0)
       setCaptures([])
-      showToast('🗑️ Registration cleared.')
+      showToast('Biometric vault reset. All registered profiles cleared.')
     } catch (err) {
-      showToast(`❌ ${err.message}`, 'error')
+      showToast(err.message, 'error')
     }
   }
 
@@ -72,96 +84,154 @@ export default function Register() {
   const isReady = total >= MIN_IMAGES
 
   return (
-    <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="text-3xl font-bold text-white mb-1">Register Your Face</h1>
-        <p className="text-gray-400">
-          Capture at least <strong className="text-white">{MIN_IMAGES} photos</strong> so the model
-          can recognise you.
-        </p>
+    <div className="space-y-8 py-2">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="inline-flex items-center gap-2 text-xs font-mono text-slate-300 glass-pill px-3 py-1 rounded-full mb-2">
+            <UserCheck className="w-3.5 h-3.5" /> BIOMETRIC VAULT ENROLLMENT
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight [text-wrap:balance]">
+            Register Identity Profile
+          </h1>
+          <p className="text-sm">
+            Capture multiple angles (neutral, smile, slight turn) to optimize Siamese embedding variance.
+          </p>
+        </div>
+
+        {/* Saved Count Badge */}
+        <div className="glass-panel px-4 py-2.5 rounded-2xl flex items-center gap-3 self-start border border-white/10">
+          <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-accent-primary)]" />
+          <div className="text-xs">
+            <span className="text-slate-400 block font-mono uppercase">Vault Storage</span>
+            <span className="font-semibold" style={{ color: 'var(--color-fg-primary)' }}>{savedCount} Profile Image{savedCount === 1 ? '' : 's'}</span>
+          </div>
+        </div>
       </div>
 
       {/* Toast */}
       {toast && (
         <div
-          className={`px-4 py-3 rounded-xl text-sm font-medium ${
+          className={`px-4 py-3 rounded-2xl text-xs font-semibold flex items-center gap-3 border transition-all ${
             toast.type === 'error'
-              ? 'bg-red-900/50 border border-red-500/40 text-red-200'
-              : 'bg-green-900/50 border border-green-500/40 text-green-200'
+              ? 'bg-[var(--color-bg-glass)] border-[var(--color-border-accent)] text-[var(--color-accent-alert)]'
+              : 'bg-[var(--color-bg-glass)] border-[var(--color-border-accent)] text-[var(--color-accent-primary)]'
           }`}
         >
-          {toast.msg}
+          {toast.type === 'error' ? (
+            <AlertCircle className="w-4 h-4" style={{ color: 'var(--color-accent-alert)' }} />
+          ) : (
+            <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--color-accent-primary)' }} />
+          )}
+          <span style={{ color: 'var(--color-fg-primary)' }}>{toast.msg}</span>
         </div>
       )}
 
-      {/* Progress */}
-      <div>
-        <div className="flex justify-between text-sm text-gray-400 mb-1">
-          <span>Progress ({total}/{MIN_IMAGES} minimum)</span>
-          <span className={isReady ? 'text-green-400 font-medium' : ''}>{isReady ? '✅ Ready!' : `${progress}%`}</span>
+      {/* Progress & Quota Card */}
+      <div className="rounded-2xl glass-panel p-5 border border-white/10 space-y-2.5">
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-mono text-slate-300 flex items-center gap-2">
+            <Layers className="w-3.5 h-3.5" style={{ color: 'var(--color-accent-primary)' }} />
+            Enrollment Quota ({total} / {MIN_IMAGES} recommended minimum)
+          </span>
+          <span className="font-mono font-bold">
+            {isReady ? 'READY FOR VERIFICATION' : `${progress}% COMPLETED`}
+          </span>
         </div>
-        <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+        <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden border border-white/5">
           <div
-            className={`h-full rounded-full transition-all duration-500 ${isReady ? 'bg-green-500' : 'bg-blue-500'}`}
-            style={{ width: `${progress}%` }}
+            className="h-full rounded-full transition-all duration-300 ease-out"
+            style={{ width: `${progress}%`, background: isReady ? 'var(--color-accent-primary)' : 'var(--color-fg-muted)' }}
           />
         </div>
-        {savedCount > 0 && (
-          <p className="text-xs text-gray-500 mt-1">{savedCount} image(s) already saved on server</p>
-        )}
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-10">
-        {/* Webcam */}
-        <div className="flex flex-col items-center gap-4">
-          <WebcamCapture webcamRef={webcamRef} label="Position your face in the frame" />
+      {/* Main Studio Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left: Webcam Capture Studio */}
+        <div className="lg:col-span-5 flex flex-col items-center gap-4">
+          <div className="relative w-full">
+            <WebcamCapture webcamRef={webcamRef} label="Active Sensor Stream (100×100 Biometric Crop)" />
+            {flash && (
+              <div className="absolute inset-0 bg-white/20 rounded-3xl pointer-events-none transition-opacity duration-150" />
+            )}
+          </div>
+
           <button
             onClick={handleCapture}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition-colors w-full"
+            className="w-full max-w-[420px] py-3 px-6 rounded-2xl font-semibold text-sm text-white btn btn-primary"
+                style={{ boxShadow: 'var(--shadow-accent)' }}
           >
-            📸 Capture Photo
+            <Camera className="w-4 h-4" style={{ color: 'var(--color-fg-primary)' }} />
+            <span>Capture Biometric Frame</span>
           </button>
         </div>
 
-        {/* Thumbnails + actions */}
-        <div className="flex-1 flex flex-col gap-4">
-          <h2 className="text-lg font-semibold text-gray-200">
-            Captured ({captures.length})
-          </h2>
+        {/* Right: Staged Captures & Vault Actions */}
+        <div className="lg:col-span-7 flex flex-col gap-5 rounded-3xl glass-panel p-6 border border-white/10 min-h-[460px] shadow-elevation-md">
+          <div className="flex items-center justify-between pb-3 border-b border-white/10">
+            <div>
+              <h2 className="text-base font-bold text-white flex items-center gap-2 [text-wrap:balance]">
+                Staged Vector Frames
+                <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-slate-800 text-slate-300 border border-slate-700">
+                  {captures.length}
+                </span>
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">Images pending commit to server storage</p>
+            </div>
 
+            {savedCount > 0 && (
+              <button
+                onClick={handleReset}
+                className="text-xs font-semibold text-slate-400 hover:text-rose-300 px-3 py-1.5 rounded-xl glass-pill hover:bg-rose-950/30 border border-rose-500/20 transition-all flex items-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" style={{ color: 'var(--color-accent-alert)' }} />
+                <span>Purge Vault</span>
+              </button>
+            )}
+          </div>
+
+          {/* Staged Image Gallery */}
           {captures.length === 0 ? (
-            <div className="flex-1 border border-dashed border-gray-700 rounded-2xl flex items-center justify-center min-h-[200px]">
-              <p className="text-gray-600 text-sm">No captures yet. Click "Capture Photo".</p>
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+              <Camera className="w-10 h-10" style={{ color: 'var(--color-fg-secondary)' }} />
+              <p className="text-sm font-medium" style={{ color: 'var(--color-fg-secondary)' }}>No new frames captured in this session</p>
+              <p className="text-xs text-slate-400 max-w-sm mt-1 [text-wrap:pretty]" style={{ color: 'var(--color-fg-muted)' }}>
+                Align your face in the camera viewport and click "Capture Biometric Frame" to stage reference photos.
+              </p>
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 max-h-[300px] overflow-y-auto pr-1">
               {captures.map((src, i) => (
-                <div key={i} className="relative group rounded-xl overflow-hidden border border-gray-700">
-                  <img src={src} alt={`capture-${i}`} className="w-full h-28 object-cover" />
+                <div 
+                  key={i} 
+                  className="group relative rounded-xl overflow-hidden glass-panel border border-white/15 aspect-square"
+                >
+                  <img src={src} alt={`frame-${i}`} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <span className="absolute bottom-1 left-2 text-xs font-mono text-slate-200 opacity-0 group-hover:opacity-100 transition-opacity">
+                    #{i + 1}
+                  </span>
                   <button
                     onClick={() => removeCapture(i)}
-                    className="absolute top-1 right-1 bg-black/70 hover:bg-red-600 text-white rounded-full w-6 h-6 text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-1.5 right-1.5 w-6 h-6 rounded-lg bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
                   >
-                    ✕
+                    <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
               ))}
             </div>
           )}
 
-          <div className="flex gap-3 mt-auto pt-4">
+          {/* Vault Commit Actions */}
+          <div className="pt-4 mt-auto border-t border-white/10 flex flex-col sm:flex-row gap-3">
             <button
               onClick={handleSave}
               disabled={captures.length === 0 || saving}
-              className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors"
+              className="flex-1 py-3 px-5 rounded-xl font-bold text-xs uppercase tracking-wider text-white bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary)]/90 disabled:opacity-30 disabled:cursor-not-allowed shadow-md transition-all flex items-center justify-center gap-2"
             >
-              {saving ? 'Saving…' : `✅ Save ${captures.length} Image(s)`}
-            </button>
-            <button
-              onClick={handleReset}
-              className="px-4 py-3 bg-gray-800 hover:bg-red-900/50 hover:border-red-500/40 text-gray-400 hover:text-red-300 font-medium rounded-xl border border-gray-700 transition-colors"
-            >
-              🗑️ Reset All
+              <Save className="w-4 h-4" />
+              <span>{saving ? 'Encrypting & Saving…' : `Commit ${captures.length} Frame(s) to Vault`}</span>
             </button>
           </div>
         </div>
@@ -169,4 +239,3 @@ export default function Register() {
     </div>
   )
 }
-

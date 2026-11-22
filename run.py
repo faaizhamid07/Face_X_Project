@@ -1,220 +1,159 @@
 #!/usr/bin/env python3
-"""
-Face-X Project Runner
-=====================
-Launches both the FastAPI backend and React frontend simultaneously with a single command.
+"""Face-X: install dependencies when needed and launch backend + frontend.
 
-Usage:
-    python run.py [--no-browser] [--port-backend 8000] [--port-frontend 5173]
+Requires Python 3.12 and Node.js/npm installed on the host.
 """
-
+import hashlib
 import os
-import sys
+from pathlib import Path
+import platform
 import shutil
 import subprocess
+import sys
 import threading
 import time
-import signal
+import urllib.error
+import urllib.request
 import webbrowser
-import platform
 
-PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
-BACKEND_DIR = os.path.join(PROJECT_ROOT, "backend")
-FRONTEND_DIR = os.path.join(PROJECT_ROOT, "frontend")
-IS_WINDOWS = platform.system() == "Windows"
-
-# ANSI Colors
-CYAN = "\033[96m"
-GREEN = "\033[92m"
-YELLOW = "\033[93m"
-RED = "\033[91m"
-MAGENTA = "\033[95m"
-BOLD = "\033[1m"
-RESET = "\033[0m"
-
-# Enable ANSI colors on Windows terminals
-if IS_WINDOWS:
-    os.system("")
+ROOT = Path(__file__).resolve().parent
+BACKEND = ROOT / "backend"
+FRONTEND = ROOT / "frontend"
+VENV = ROOT / ".venv"
+WINDOWS = platform.system() == "Windows"
+VENV_PYTHON = VENV / ("Scripts/python.exe" if WINDOWS else "bin/python")
+REQUIREMENTS = BACKEND / "requirements.txt"
+STAMP = VENV / ".face-x-requirements.sha256"
 
 
-def print_banner():
-    print(f"""{CYAN}{BOLD}
-╔══════════════════════════════════════════════════════════════╗
-║               Face-X Facial Verification App                 ║
-║               Real-time Siamese Neural Network               ║
-╚══════════════════════════════════════════════════════════════╝{RESET}
-""")
-
-
-def get_backend_python():
-    """Locate the virtual environment's Python executable or fallback to current python."""
-    candidates = [
-        os.path.join(BACKEND_DIR, ".venv", "Scripts", "python.exe"),
-        os.path.join(BACKEND_DIR, ".venv", "bin", "python"),
-        os.path.join(PROJECT_ROOT, ".venv", "Scripts", "python.exe"),
-        os.path.join(PROJECT_ROOT, ".venv", "bin", "python"),
-    ]
-    for path in candidates:
-        if os.path.isfile(path):
-            return path
-    return sys.executable
-
-
-def get_npm_cmd():
-    """Locate npm executable."""
-    if IS_WINDOWS:
-        return "npm.cmd" if shutil.which("npm.cmd") else "npm"
-    return "npm"
-
-
-def stream_logs(pipe, prefix, color):
-    """Read lines from process stdout/stderr and print with prefix."""
+def command_output(args):
     try:
-        for line in iter(pipe.readline, ""):
-            if not line:
-                break
-            stripped = line.rstrip("\r\n")
-            if stripped:
-                print(f"{color}[{prefix}]{RESET} {stripped}", flush=True)
-    except Exception:
-        pass
-    finally:
-        try:
-            pipe.close()
-        except Exception:
-            pass
+        result = subprocess.run(args, capture_output=True, text=True, timeout=20)
+        return result.stdout.strip() if result.returncode == 0 else None
+    except (OSError, subprocess.TimeoutExpired):
+        return None
 
 
-def kill_process_tree(proc):
-    """Reliably terminate a process and all its child/grandchild processes."""
-    if proc is None:
+def python_version(command):
+    return command_output(command + ["-c", "import sys; print('%d.%d' % sys.version_info[:2])"])
+
+
+def find_python312():
+    candidates = [[sys.executable], ["py", "-3.12"]] if WINDOWS else [[sys.executable], ["python3.12"]]
+    for candidate in candidates:
+        if python_version(candidate) == "3.12":
+            return candidate
+    raise RuntimeError("Python 3.12 is required. Install it, then rerun. Python 3.14 can remain your default.")
+
+
+def ensure_backend():
+    if not REQUIREMENTS.is_file():
+        raise RuntimeError("Missing backend/requirements.txt")
+    if VENV_PYTHON.is_file() and python_version([str(VENV_PYTHON)]) != "3.12":
+        raise RuntimeError("Existing .venv is not Python 3.12. Rename .venv and rerun.")
+    if not VENV_PYTHON.is_file():
+        print("[Setup] Creating Python 3.12 environment...", flush=True)
+        subprocess.run(find_python312() + ["-m", "venv", str(VENV)], check=True)
+    python = str(VENV_PYTHON)
+    digest = hashlib.sha256(REQUIREMENTS.read_bytes()).hexdigest()
+    probe = command_output([python, "-c", "import fastapi, uvicorn, numpy, PIL, cv2, tensorflow; print('ok')"])
+    if STAMP.exists() and STAMP.read_text().strip() == digest and probe == "ok":
+        return python
+    print("[Setup] Checking/installing backend dependencies (first run can take several minutes)...", flush=True)
+    subprocess.run([python, "-m", "pip", "install", "-r", str(REQUIREMENTS)], check=True)
+    probe = command_output([python, "-c", "import fastapi, uvicorn, numpy, PIL, cv2, tensorflow; print('ok')"])
+    if probe != "ok":
+        raise RuntimeError("Backend dependency import check failed. Review installation output.")
+    STAMP.write_text(digest)
+    return python
+
+
+def ensure_frontend():
+    npm = "npm.cmd" if WINDOWS else "npm"
+    if not shutil.which(npm):
+        raise RuntimeError("Node.js/npm not found. Install Node.js 18+ and reopen your terminal.")
+    if not (FRONTEND / "node_modules").is_dir():
+        print("[Setup] Installing frontend packages...", flush=True)
+        command = "ci" if (FRONTEND / "package-lock.json").is_file() else "install"
+        subprocess.run([npm, command], cwd=FRONTEND, check=True)
+    return npm
+
+
+def stream_logs(pipe, label):
+    for line in pipe:
+        print("[%s] %s" % (label, line.rstrip()), flush=True)
+
+
+def stop_process(proc):
+    if proc is None or proc.poll() is not None:
         return
-    try:
-        if IS_WINDOWS:
-            subprocess.run(
-                ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False,
-            )
-        else:
-            proc.terminate()
-            try:
-                proc.wait(timeout=2)
-            except subprocess.TimeoutExpired:
-                proc.kill()
-    except Exception:
+    if WINDOWS:
+        subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+    else:
+        proc.terminate()
         try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
             proc.kill()
-        except Exception:
+
+
+def wait_for_backend(proc, seconds=180):
+    print("[Startup] Waiting for backend model initialization...", flush=True)
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline:
+        if proc.poll() is not None:
+            raise RuntimeError("Backend exited during startup. Read [Backend] logs above.")
+        try:
+            with urllib.request.urlopen("http://127.0.0.1:8000/health", timeout=2) as response:
+                if response.status == 200:
+                    return
+        except (urllib.error.URLError, TimeoutError, OSError):
             pass
+        time.sleep(1)
+    raise RuntimeError("Backend not ready after 180 seconds. Read [Backend] logs above.")
 
 
 def main():
-    print_banner()
-
-    auto_open_browser = "--no-browser" not in sys.argv
-
-    # 1. Resolve Python executable
-    py_exec = get_backend_python()
-    print(f"{GREEN}✓{RESET} Backend Python: {py_exec}")
-
-    # 2. Check Node & Frontend
-    npm_cmd = get_npm_cmd()
-    if not shutil.which(npm_cmd):
-        print(f"{RED}Error: 'npm' was not found in PATH. Please install Node.js (v18+) to run the frontend.{RESET}")
-        sys.exit(1)
-
-    node_modules = os.path.join(FRONTEND_DIR, "node_modules")
-    if not os.path.isdir(node_modules):
-        print(f"{YELLOW}node_modules not found in frontend/. Installing dependencies...{RESET}")
-        subprocess.run([npm_cmd, "install"], cwd=FRONTEND_DIR, check=True)
-
-    print(f"{GREEN}✓{RESET} Frontend Node/NPM: Ready\n")
-
-    backend_proc = None
-    frontend_proc = None
-    stop_event = threading.Event()
-
-    def shutdown(signum=None, frame=None):
-        if stop_event.is_set():
-            return
-        stop_event.set()
-        print(f"\n{YELLOW}Shutting down Face-X servers...{RESET}")
-        kill_process_tree(backend_proc)
-        kill_process_tree(frontend_proc)
-        print(f"{GREEN}All servers stopped cleanly. Goodbye!{RESET}")
-        sys.exit(0)
-
-    # Register signal handlers
-    signal.signal(signal.SIGINT, shutdown)
-    signal.signal(signal.SIGTERM, shutdown)
-
-    print(f"{BOLD}Starting services:{RESET}")
-    print(f"  • {MAGENTA}Backend API:{RESET}  http://localhost:8000 (Swagger docs: http://localhost:8000/docs)")
-    print(f"  • {CYAN}Frontend UI:{RESET}  http://localhost:5173")
-    print(f"  (Press {BOLD}Ctrl+C{RESET} to stop both servers at any time)\n")
-    print(f"{'─' * 64}\n")
-
-    # Start Backend
-    backend_cmd = [py_exec, "-m", "uvicorn", "app.main:app", "--port", "8000"]
-    backend_proc = subprocess.Popen(
-        backend_cmd,
-        cwd=BACKEND_DIR,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        bufsize=1,
-    )
-    b_thread = threading.Thread(
-        target=stream_logs,
-        args=(backend_proc.stdout, "Backend", MAGENTA),
-        daemon=True,
-    )
-    b_thread.start()
-
-    # Start Frontend
-    frontend_cmd = [npm_cmd, "run", "dev"]
-    frontend_proc = subprocess.Popen(
-        frontend_cmd,
-        cwd=FRONTEND_DIR,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        bufsize=1,
-    )
-    f_thread = threading.Thread(
-        target=stream_logs,
-        args=(frontend_proc.stdout, "Frontend", CYAN),
-        daemon=True,
-    )
-    f_thread.start()
-
-    # Optional auto-open browser after 2 seconds
-    if auto_open_browser:
-        def open_browser():
-            time.sleep(2.5)
-            if not stop_event.is_set():
-                try:
-                    webbrowser.open("http://localhost:5173")
-                except Exception:
-                    pass
-
-        threading.Thread(target=open_browser, daemon=True).start()
-
-    # Wait for either process to terminate
+    backend = frontend = None
     try:
-        while not stop_event.is_set():
-            if backend_proc.poll() is not None:
-                print(f"\n{RED}Backend process exited unexpectedly (code {backend_proc.returncode}).{RESET}")
-                shutdown()
-            if frontend_proc.poll() is not None:
-                print(f"\n{RED}Frontend process exited unexpectedly (code {frontend_proc.returncode}).{RESET}")
-                shutdown()
+        python = ensure_backend()
+        npm = ensure_frontend()
+        print("[Startup] Backend Python:", python, flush=True)
+        backend = subprocess.Popen([python, "-m", "uvicorn", "app.main:app",
+                                    "--host", "127.0.0.1", "--port", "8000"],
+                                   cwd=BACKEND, stdout=subprocess.PIPE,
+                                   stderr=subprocess.STDOUT, text=True, bufsize=1, errors="replace")
+        threading.Thread(target=stream_logs, args=(backend.stdout, "Backend"), daemon=True).start()
+        wait_for_backend(backend)
+        print("[Startup] Backend ready. Starting frontend...", flush=True)
+        frontend = subprocess.Popen([npm, "run", "dev", "--", "--host", "127.0.0.1", "--strictPort"],
+                                    cwd=FRONTEND, stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT, text=True, bufsize=1, errors="replace")
+        threading.Thread(target=stream_logs, args=(frontend.stdout, "Frontend"), daemon=True).start()
+        time.sleep(2)
+        if frontend.poll() is not None:
+            raise RuntimeError("Frontend exited. Check [Frontend] logs (port 5173 may be in use).")
+        if "--no-browser" not in sys.argv:
+            webbrowser.open("http://localhost:5173")
+        print("Face-X: http://localhost:5173 | API: http://localhost:8000/docs", flush=True)
+        print("Press Ctrl+C to stop.", flush=True)
+        while True:
+            if backend.poll() is not None:
+                raise RuntimeError("Backend exited. Check [Backend] logs.")
+            if frontend.poll() is not None:
+                raise RuntimeError("Frontend exited. Check [Frontend] logs.")
             time.sleep(0.5)
     except KeyboardInterrupt:
-        shutdown()
+        print("\nStopping Face-X...", flush=True)
+    except (RuntimeError, subprocess.CalledProcessError) as exc:
+        print("ERROR:", exc, file=sys.stderr, flush=True)
+        return 1
+    finally:
+        stop_process(frontend)
+        stop_process(backend)
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
